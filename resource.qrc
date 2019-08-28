@@ -1,0 +1,51 @@
+<RCC>
+    <qresource prefix="/pictures">
+        <file>img/class_01.jpg</file>
+        <file>img/class_02.jpg</file>
+        <file>img/seg_01.jpg</file>
+        <file>img/seg_02.jpg</file>
+        <file>img/seg_03.jpg</file>
+        <file>img/vid_01.jpg</file>
+        <file>img/vid_02.jpg</file>
+        <file>img/vid_03.jpg</file>
+        <file>img/vid_04.jpg</file>
+        <file>img/vid_05.jpg</file>
+        <file>img/seg_04.png</file>
+    </qresource>
+    <qresource prefix="/icons">
+        <file>icons/icon.icns</file>
+        <file>icons/cancel.png</file>
+        <file>icons/close.png</file>
+        <file>icons/color-line.png</file>
+        <file>icons/color.png</file>
+        <file>icons/copy.png</file>
+        <file>icons/delete.png</file>
+        <file>icons/done.png</file>
+        <file>icons/edit.png</file>
+        <file>icons/expert.png</file>
+        <file>icons/eye.png</file>
+        <file>icons/feBlend-icon.png</file>
+        <file>icons/file.png</file>
+        <file>icons/fit-width.png</file>
+        <file>icons/fit-window.png</file>
+        <file>icons/fit.png</file>
+        <file>icons/help.png</file>
+        <file>icons/icon.png</file>
+        <file>icons/labels.png</file>
+        <file>icons/new.png</file>
+        <file>icons/next.png</file>
+        <file>icons/objects.png</file>
+        <file>icons/open.png</file>
+        <file>icons/prev.png</file>
+        <file>icons/quit.png</file>
+        <file>icons/save-as.png</file>
+        <file>icons/save.png</file>
+        <file>icons/undo-cross.png</file>
+        <file>icons/undo.png</file>
+        <file>icons/zoom-in.png</file>
+        <file>icons/zoom-out.png</file>
+        <file>icons/zoom.png</file>
+        <file>icons/icon.ico</file>
+        <file>icons/redo.png</file>
+    </qresource>
+</RCC>
