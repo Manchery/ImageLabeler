@@ -10,6 +10,7 @@ void RectAnnotations::push_back(const RectAnnotationItem &item) {
 
     emit AnnotationAdded(item);
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 void RectAnnotations::remove(int idx){
@@ -19,6 +20,7 @@ void RectAnnotations::remove(int idx){
 
     emit AnnotationRemoved(idx);
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 void RectAnnotations::modify(int idx, const RectAnnotationItem &item){
@@ -27,6 +29,7 @@ void RectAnnotations::modify(int idx, const RectAnnotationItem &item){
     items[idx] = item;
     //! TODO: modify signal
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 //void RectAnnotations::modify(int idx, const QRect &rect, const QString &label){
@@ -54,6 +57,7 @@ void RectAnnotations::redo(){
         items[op.idx] = op.item2;
     }
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 void RectAnnotations::undo(){
@@ -74,6 +78,7 @@ void RectAnnotations::undo(){
         items[op.idx] = op.item2;
     }
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 void RectAnnotations::setVisible(int idx, bool visible){
@@ -102,6 +107,7 @@ void RectAnnotations::allClear(){
     ops.clear();
     curVersion=-1;
     emit dataChanged();
+    emitUndoRedoEnable();
 }
 
 void RectAnnotations::checkIdx(int idx) const{
@@ -114,4 +120,11 @@ void RectAnnotations::pushBackOp(RectAnnotationOp op){
         ops.pop();
     ops.push_back(op);
     ++curVersion;
+    emitUndoRedoEnable();
+}
+
+void RectAnnotations::emitUndoRedoEnable()
+{
+    emit UndoEnableChanged(curVersion!=-1);
+    emit RedoEnableChanged(curVersion!=ops.length()-1);
 }

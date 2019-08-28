@@ -46,6 +46,10 @@ public:
 signals:
     void dataChanged();
     void labelGiveBack(QString label);
+
+    void UndoEnableChanged(bool);
+    void RedoEnableChanged(bool);
+
     void AnnotationAdded(RectAnnotationItem item);
     void AnnotationInserted(RectAnnotationItem item, int idx);
     void AnnotationRemoved(int idx);
@@ -72,6 +76,7 @@ private:
 
     void checkIdx(int idx) const;
     void pushBackOp(RectAnnotationOp op);
+    void emitUndoRedoEnable();
 };
 
 #endif // RECTLABELDATA_H

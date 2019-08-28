@@ -82,7 +82,13 @@ MainWindow::MainWindow(QWidget *parent) :
                 }
             });
 
+    ui->actionUndo->setEnabled(false);
+    connect(&rectAnno, &RectAnnotations::UndoEnableChanged,
+            ui->actionUndo, &QAction::setEnabled);
     connect(ui->actionUndo, &QAction::triggered, &rectAnno, &RectAnnotations::undo);
+    ui->actionRedo->setEnabled(false);
+    connect(&rectAnno, &RectAnnotations::RedoEnableChanged,
+            ui->actionRedo, &QAction::setEnabled);
     connect(ui->actionRedo, &QAction::triggered, &rectAnno, &RectAnnotations::redo);
 
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
