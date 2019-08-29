@@ -22,18 +22,20 @@ QColor randomColor(){
     return QColor::fromHslF(currentHue, 1.0, 0.5);
 }
 
+static const int eps=5;
+
 bool onRectTop(QPoint pos, QRect rect){
-    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.top())<=2;
+    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.top())<=eps;
 }
 
 bool onRectBottom(QPoint pos, QRect rect){
-    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.bottom())<=2;
+    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.bottom())<=eps;
 }
 
 bool onRectLeft(QPoint pos, QRect rect){
-    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.left())<=2;
+    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.left())<=eps;
 }
 
 bool onRectRight(QPoint pos, QRect rect){
-    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=2;
+    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=eps;
 }

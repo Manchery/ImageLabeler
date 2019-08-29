@@ -20,7 +20,6 @@ QJsonObject RectAnnotationItem::toJsonObject(){
     QJsonObject json;
     json.insert("points", points);
     json.insert("label", label);
-    json.insert("visible", visible);
     return json;
 }
 
@@ -52,13 +51,6 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
         if (value.isString()){
             label = value.toString();
             qDebug()<<"label: "<<label;
-        }
-    }
-    if (json.contains("visible")){
-        QJsonValue value = json.value("visible");
-        if (value.isBool()){
-            visible = value.toBool();
-            qDebug()<<"visible: "<<visible;
         }
     }
 }
@@ -100,8 +92,8 @@ void RectAnnotations::modify(int idx, const RectAnnotationItem &item){
 //    modify(idx, RectAnnotationItem{rect, label});
 //}
 
-void RectAnnotations::push_back(const QRect &rect, const QString &label, bool visible){
-    push_back(RectAnnotationItem{rect, label, visible});
+void RectAnnotations::push_back(const QRect &rect, const QString &label){
+    push_back(RectAnnotationItem{rect, label});
 }
 
 void RectAnnotations::redo(){
@@ -145,14 +137,10 @@ void RectAnnotations::undo(){
     emitUndoRedoEnable();
 }
 
-void RectAnnotations::setVisible(int idx, bool visible){
-    items[idx].visible = visible;
-    emit dataChanged();
-}
-
 void RectAnnotations::setSelected(int idx)
 {
     selectedIdx=idx;
+    qDebug()<<"Select "<< idx;
     emit dataChanged();
 }
 

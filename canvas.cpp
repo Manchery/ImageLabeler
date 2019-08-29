@@ -9,7 +9,8 @@ Canvas::Canvas(const LabelManager *pLabelConfig, const RectAnnotations *pLabelDa
     QWidget(parent),
     pixmap(), scale(1.0),
     pRectAnno(pLabelData),
-    pLabelManager(pLabelConfig)
+    pLabelManager(pLabelConfig),
+    editing(false)
 
 {
     task = TaskMode::DETECTION;
@@ -38,7 +39,6 @@ const QPixmap &Canvas::getPixmap() const { return pixmap; }
 int Canvas::selectShape(QPoint pos)
 {
     for (int i=pRectAnno->length()-1;i>=0;i--){
-        if (!(*pRectAnno)[i].visible) continue;
         QRect rect=(*pRectAnno)[i].rect;
         // consider for really small bounding box
         rect.setTopLeft(rect.topLeft()-QPoint(2,2));
@@ -220,8 +220,6 @@ void Canvas::paintEvent(QPaintEvent *event)
                 QString label=(*pRectAnno)[i].label;
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
-                if (!(*pRectAnno)[i].visible)
-                    continue;
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].color.isValid()){
                     p.save();
@@ -250,8 +248,6 @@ void Canvas::paintEvent(QPaintEvent *event)
                 QRect rect=(*pRectAnno)[i].rect;
                 QString label=(*pRectAnno)[i].label;
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
-                    continue;
-                if (!(*pRectAnno)[i].visible)
                     continue;
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].color.isValid()){

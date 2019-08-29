@@ -12,7 +12,6 @@
 struct RectAnnotationItem{
     QRect rect;
     QString label;
-    bool visible;
     QString toStr();
     QJsonObject toJsonObject();
     void fromJsonObject(const QJsonObject &json);
@@ -64,14 +63,13 @@ public slots:
     void remove(int idx);
     void modify(int idx, const RectAnnotationItem &item);
 
-    void push_back(const QRect &rect, const QString &label, bool visible);
+    void push_back(const QRect &rect, const QString &label);
 
     void allClear();
 
     void redo();
     void undo();
 
-    void setVisible(int idx, bool visible);
     void setSelected(int idx);
 
 private:

@@ -87,15 +87,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->annoListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideAnnoContextMenu);
 
-    connect(ui->annoListWidget, &QListWidget::itemChanged,
-            [this](QListWidgetItem *item){ // changeLabelVisble
-                if (item->checkState()==Qt::Checked){
-                    rectAnno.setVisible(ui->annoListWidget->row(item),true);
-                }else{
-                    rectAnno.setVisible(ui->annoListWidget->row(item),false);
-                }
-            });
-
     ui->actionUndo->setEnabled(false);
     connect(&rectAnno, &RectAnnotations::UndoEnableChanged,
             ui->actionUndo, &QAction::setEnabled);
@@ -108,8 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas, &Canvas::removeRectRequest, &rectAnno, &RectAnnotations::remove);
     connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
-        rectAnno.modify(idx, RectAnnotationItem{rect, rectAnno.getSelectedItem().label,
-                        rectAnno.getSelectedItem().visible});
+        rectAnno.modify(idx, RectAnnotationItem{rect, rectAnno.getSelectedItem().label});
     });
 
 
@@ -125,12 +115,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&rectAnno, &RectAnnotations::dataChanged, canvas, qOverload<>(&QWidget::update));
 
     connect(&rectAnno, &RectAnnotations::AnnotationAdded,[this](RectAnnotationItem item){
-        ui->annoListWidget->addCustomItem(item.toStr(), labelManager.getColor(item.label),
-                                          item.visible);
+        ui->annoListWidget->addCustomItemUncheckable(item.toStr(), labelManager.getColor(item.label));
     });
     connect(&rectAnno, &RectAnnotations::AnnotationInserted,[this](RectAnnotationItem item, int idx){
-        ui->annoListWidget->insertCustomItem(item.toStr(), labelManager.getColor(item.label),
-                                          item.visible, idx);
+        ui->annoListWidget->insertCustomItemUncheckable(item.toStr(), labelManager.getColor(item.label),idx);
     });
     connect(&rectAnno, &RectAnnotations::AnnotationModified,[this](RectAnnotationItem item, int idx){
         ui->annoListWidget->changeTextByIdx(idx, item.toStr());
@@ -199,10 +187,10 @@ void MainWindow::getNewRect(QRect rect)
         if(dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            rectAnno.push_back(rect, newLabel, true);
+            rectAnno.push_back(rect, newLabel);
         }
     }else{
-        rectAnno.push_back(rect, curLabel, true);
+        rectAnno.push_back(rect, curLabel);
     }
 }
 

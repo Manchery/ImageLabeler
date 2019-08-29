@@ -5,9 +5,9 @@ LabelListWidget::LabelListWidget(QWidget *parent):QListWidget(parent){}
 
 void LabelListWidget::mousePressEvent(QMouseEvent *event){
     QModelIndex idx = indexAt(event->pos());
-    if (!idx.isValid())
+    if (!idx.isValid()){
         clearSelection();
-    else {
+    } else {
         QListWidget::mousePressEvent(event);
     }
 }
@@ -41,14 +41,40 @@ void LabelListWidget::insertCustomItem(QString label, QColor color, bool visible
     this->insertItem(idx, item);
 }
 
+void LabelListWidget::addCustomItemUncheckable(QString label, QColor color){
+    QPixmap pixmap(16,16);
+    if (color.isValid()){
+        pixmap.fill(color);
+    }else{
+        throw "invalid color when add custom colored item.";
+    }
+    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
+
+    this->addItem(item);
+}
+
+void LabelListWidget::insertCustomItemUncheckable(QString label, QColor color, int idx)
+{
+    QPixmap pixmap(16,16);
+    if (color.isValid()){
+        pixmap.fill(color);
+    }else{
+        throw "invalid color when add custom colored item.";
+    }
+    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
+    this->insertItem(idx, item);
+}
+
 void LabelListWidget::removeCustomItem(QString label){
     auto item = _findItemByText(label);
-    this->takeItem(this->row(item));
+    delete this->takeItem(this->row(item));
+    clearSelection(); //! warning: only because this fixes a confuse bug
 }
 
 void LabelListWidget::removeCustomItemByIdx(int idx)
 {
-    this->takeItem(idx);
+    delete this->takeItem(idx);
+    clearSelection(); //! warning: only because this fixes a confuse bug
 }
 
 void LabelListWidget::changeCheckState(QString label, bool visible){
