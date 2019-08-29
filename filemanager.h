@@ -28,6 +28,8 @@ public:
     QString getCurrentOutputFile() const;
     QString getLabelFile() const;
     FileMode getMode() const;
+    QStringList allImageFiles() const { return imageFiles; }
+    int getCurIdx() const  { return curIdx; }
     void close();
 
     int count();
@@ -37,15 +39,14 @@ public:
 signals:
     void prevEnableChanged(bool);
     void nextEnableChanged(bool);
+    void fileListSetup();
 public slots:
     void setChangeNotSaved();
     void resetChangeNotSaved();
-    void setOutputFile(QString output, int idx);
 
     void prevFile();
     void nextFile();
     void selectFile(int idx);
-
 
 private:
     QStringList imageFiles;

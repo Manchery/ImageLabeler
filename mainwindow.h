@@ -31,6 +31,8 @@ public slots:
     void provideLabelContextMenu(const QPoint &pos);
     void provideAnnoContextMenu(const QPoint &pos);
 
+    bool switchFile(int idx);
+
 private slots:
     void on_actionOpen_File_triggered();
     void on_actionOpen_Dir_triggered();

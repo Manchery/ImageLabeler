@@ -121,19 +121,37 @@ MainWindow::MainWindow(QWidget *parent) :
     // end label data
 
     // file
+    ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+
     connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
     connect(&rectAnno, &RectAnnotations::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
 
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
 
-
+    connect(&fileManager, &FileManager::fileListChanged, [this](){
+        if (fileManager.getMode() == Close) return;
+        ui->fileListWidget->clear();
+        for (const QString &image: fileManager.allImageFiles()){
+            ui->fileListWidget->addItem(image);
+        }
+        ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
+    });
+    connect(ui->fileListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item){
+        if (fileManager.getMode()==MultiImage){
+            int idx = ui->fileListWidget->row(item);
+            if (!switchFile(idx)){
+                ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
+            }
+        }
+    });
     // end file
 
     connect(canvas, &Canvas::mouseMoved, this, &MainWindow::reportMouseMoved);
     connect(canvas, &Canvas::zoomRequest, this, &MainWindow::zoomRequest);
     connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
 
+    // labeldialog
     connect(ui->pushButton_addLabel, &QPushButton::clicked, [this](){
         newLabelRequest(ui->lineEdit_addLabel->text());
         ui->lineEdit_addLabel->setText("");
@@ -142,6 +160,7 @@ MainWindow::MainWindow(QWidget *parent) :
         newLabelRequest(ui->lineEdit_addLabel->text());
         ui->lineEdit_addLabel->setText("");
     });
+    // end labeldialog
 }
 
 MainWindow::~MainWindow()
@@ -304,38 +323,34 @@ void MainWindow::on_actionLoad_triggered()
     }
 }
 
-void MainWindow::on_actionPrevious_Image_triggered()
+bool MainWindow::switchFile(int idx)
 {
-    if (!_checkUnsaved()) return;
+    if (!_checkUnsaved()) return false;
 
     //! TODO: whether clear
     labelManager.allClear();
     rectAnno.allClear();
 
-    fileManager.prevFile();
+    fileManager.selectFile(idx);
     _loadJsonFile(fileManager.getLabelFile());
     _loadJsonFile(fileManager.getCurrentOutputFile());
     fileManager.resetChangeNotSaved();
 
     canvas->loadPixmap(fileManager.getCurrentImageFile());
     adjustFitWindow();
+
+    ui->fileListWidget->item(idx)->setSelected(true);
+    return true;
+}
+
+void MainWindow::on_actionPrevious_Image_triggered()
+{
+    switchFile(fileManager.getCurIdx()-1);
 }
 
 void MainWindow::on_actionNext_Image_triggered()
 {
-    if (!_checkUnsaved()) return;
-
-    //! TODO: whether clear
-    labelManager.allClear();
-    rectAnno.allClear();
-
-    fileManager.nextFile();
-    _loadJsonFile(fileManager.getLabelFile());
-    _loadJsonFile(fileManager.getCurrentOutputFile());
-    fileManager.resetChangeNotSaved();
-
-    canvas->loadPixmap(fileManager.getCurrentImageFile());
-    adjustFitWindow();
+    switchFile(fileManager.getCurIdx()+1);
 }
 
 void MainWindow::on_actionClose_triggered()
@@ -364,6 +379,8 @@ void MainWindow::on_actionSave_triggered()
         json.insert("labels", labelManager.toJsonArray());
         json.insert("annotations", rectAnno.toJsonArray());
         FileManager::saveJson(json, fileManager.getCurrentOutputFile());
+
+        fileManager.resetChangeNotSaved();
     } else if (fileManager.getMode() == MultiImage){
         QJsonObject labelJson;
         labelJson.insert("labels", labelManager.toJsonArray());
@@ -372,6 +389,8 @@ void MainWindow::on_actionSave_triggered()
         QJsonObject annoJson;
         annoJson.insert("annotations", rectAnno.toJsonArray());
         FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
+
+        fileManager.resetChangeNotSaved();
     }
 }
 

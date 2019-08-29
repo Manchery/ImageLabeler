@@ -67,7 +67,7 @@ QJsonObject FileManager::readJson(QString fileName)
     }
 }
 
-
+/*--------------------------FileManager-----------------------------*/
 
 FileManager::FileManager(QObject *parent) : QObject(parent)
 {
@@ -107,6 +107,7 @@ void FileManager::close()
     changeNotSaved=false;
     emit prevEnableChanged(false);
     emit nextEnableChanged(false);
+    emit fileListChanged();
 }
 
 int FileManager::count(){ return imageFiles.length(); }
@@ -121,6 +122,7 @@ void FileManager::setAll(QString fileName, QString outputExtension)
     imageFiles<<fileName;
     outputFiles<<getDir(fileName) + getName(fileName) + "_labels_annotations." + outputExtension;
     emitPrevNextEnable();
+    emit fileListChanged();
 }
 
 void FileManager::setAll(QStringList fileNames, QString outputExtension)
@@ -136,15 +138,12 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
     }
     labelFile = getDir(fileNames[0]) + "labels.json";
     emitPrevNextEnable();
+    emit fileListChanged();
 }
 
 void FileManager::setChangeNotSaved() { changeNotSaved=true; }
 
 void FileManager::resetChangeNotSaved(){ changeNotSaved=false; }
-
-void FileManager::setOutputFile(QString output, int idx){
-    outputFiles[idx] = output;
-}
 
 void FileManager::prevFile(){
     if (curIdx>0) selectFile(curIdx-1);
@@ -155,6 +154,7 @@ void FileManager::nextFile(){
 }
 
 void FileManager::selectFile(int idx){
+    if (curIdx==idx) return;
     curIdx=idx;
     emitPrevNextEnable();
 }
