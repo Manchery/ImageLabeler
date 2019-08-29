@@ -3,7 +3,7 @@
 
 LabelManager::LabelManager(QObject *parent) : QObject(parent)
 {
-
+    currentId=-1;
 }
 
 LabelProperty LabelManager::operator[](QString label) const {
@@ -63,8 +63,8 @@ void LabelManager::fromJsonObject(QJsonObject json)
 }
 
 void LabelManager::addLabel(QString label, QColor color, bool visible){
-    labels[label] = LabelProperty(label, color, visible);
-    emit labelAdded(label, color, visible);
+    labels[label] = LabelProperty(label, color, visible, newLabelId());
+    emit labelAdded(label, color, visible, currentId);
     emit configChanged();
 }
 
@@ -95,14 +95,16 @@ void LabelManager::setVisible(QString label, bool visible){
 void LabelManager::allClear()
 {
     labels.clear();
+    currentId=-1;
     emit allCleared();
 //    emit configChanged();
 }
 
-LabelProperty::LabelProperty() { }
+LabelProperty::LabelProperty(QString label, QColor color, bool visible, int id) :
+    label(label), color(color), visible(visible),id(id) { }
 
-LabelProperty::LabelProperty(QString label, QColor color, bool visible) :
-    label(label), color(color), visible(visible) { }
+LabelProperty::LabelProperty():label(), color(), visible(true), id(-1) {
+}
 
 QJsonObject LabelProperty::toJsonObject(){
     QJsonArray colorJson;
@@ -111,6 +113,7 @@ QJsonObject LabelProperty::toJsonObject(){
     colorJson.append(color.blue());
     QJsonObject json;
     json.insert("label", label);
+    json.insert("id", id);
     json.insert("color", colorJson);
     json.insert("visible", visible);
     return json;
@@ -141,6 +144,13 @@ void LabelProperty::fromJsonObject(QJsonObject json)
         if (value.isBool()){
             visible = value.toBool();
             qDebug()<<"visible: "<<visible;
+        }
+    }
+    if (json.contains("id")){
+        QJsonValue value = json.value("id");
+        if (value.isDouble()){
+            id = static_cast<int>(value.toDouble());
+            qDebug()<<"id: "<<id;
         }
     }
 }

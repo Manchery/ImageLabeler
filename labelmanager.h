@@ -11,11 +11,12 @@
 class LabelProperty
 {
 public:
+    LabelProperty(QString label, QColor color, bool visible, int id);
     LabelProperty();
-    LabelProperty(QString label, QColor color=QColor(), bool visible=true);
     QString label;
     QColor color;
     bool visible;
+    int id;
 
     QJsonObject toJsonObject();
     void fromJsonObject(QJsonObject json);
@@ -39,12 +40,12 @@ public:
 signals:
     void configChanged();
     void labelRemoved(QString label);
-    void labelAdded(QString label, QColor color, bool visibile);
+    void labelAdded(QString label, QColor color, bool visibile,int id);
     void visibelChanged(QString label, bool visible);
     void colorChanged(QString label, QColor color);
     void allCleared();
 public slots:
-    void addLabel(QString label, QColor color=QColor(), bool visible=true);
+    void addLabel(QString label, QColor color, bool visible);
     void removeLabel(QString label);
     void setColor(QString label, QColor color);
     void setVisible(QString label, bool visible);
@@ -53,6 +54,9 @@ public slots:
 private:
     QMap<QString, LabelProperty> labels;
     void checkLabel(QString label) const;
+
+    int currentId;
+    int newLabelId() { return ++currentId; }
 };
 
 #endif // LABELMANAGER_H

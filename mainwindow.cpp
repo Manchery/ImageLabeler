@@ -99,7 +99,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas, &Canvas::removeRectRequest, &rectAnno, &RectAnnotations::remove);
     connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
-        rectAnno.modify(idx, RectAnnotationItem{rect, rectAnno.getSelectedItem().label});
+        rectAnno.modify(idx, RectAnnotationItem(rect, rectAnno.getSelectedItem().label,
+                                                rectAnno.getSelectedItem().id));
     });
 
 
@@ -187,10 +188,12 @@ void MainWindow::getNewRect(QRect rect)
         if(dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            rectAnno.push_back(rect, newLabel);
+            rectAnno.push_back(RectAnnotationItem(rect, newLabel,
+                                                  rectAnno.newInstanceIdForLabel(newLabel)));
         }
     }else{
-        rectAnno.push_back(rect, curLabel);
+        rectAnno.push_back(RectAnnotationItem(rect, curLabel,
+                                              rectAnno.newInstanceIdForLabel(curLabel)));
     }
 }
 
@@ -199,7 +202,7 @@ void MainWindow::newLabelRequest(QString newLabel)
     if (newLabel.isNull() || newLabel.isEmpty()) return;
     if (!labelManager.hasLabel(newLabel)){
         QColor newColor = randomColor();
-        labelManager.addLabel(newLabel, newColor);
+        labelManager.addLabel(newLabel, newColor, true);
     }
 }
 

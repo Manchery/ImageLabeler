@@ -6,7 +6,7 @@ QString RectAnnotationItem::toStr(){
             QString::number(rect.topLeft().y())+")";
     QString bottomRightStr = "("+QString::number(rect.bottomRight().x())+","+
             QString::number(rect.bottomRight().y())+")";
-    return label+" ("+topLeftStr+","+bottomRightStr+")";
+    return label+" "+QString::number(id)+" ("+topLeftStr+","+bottomRightStr+")";
 }
 
 QJsonObject RectAnnotationItem::toJsonObject(){
@@ -20,6 +20,7 @@ QJsonObject RectAnnotationItem::toJsonObject(){
     QJsonObject json;
     json.insert("points", points);
     json.insert("label", label);
+    json.insert("id", id);
     return json;
 }
 
@@ -51,6 +52,13 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
         if (value.isString()){
             label = value.toString();
             qDebug()<<"label: "<<label;
+        }
+    }
+    if (json.contains("id")){
+        QJsonValue value = json.value("id");
+        if (value.isDouble()){
+            id = static_cast<int>(value.toDouble());
+            qDebug()<<"id: "<<id;
         }
     }
 }
@@ -86,14 +94,6 @@ void RectAnnotations::modify(int idx, const RectAnnotationItem &item){
     emit AnnotationModified(item, idx);
     emit dataChanged();
     emitUndoRedoEnable();
-}
-
-//void RectAnnotations::modify(int idx, const QRect &rect, const QString &label){
-//    modify(idx, RectAnnotationItem{rect, label});
-//}
-
-void RectAnnotations::push_back(const QRect &rect, const QString &label){
-    push_back(RectAnnotationItem{rect, label});
 }
 
 void RectAnnotations::redo(){

@@ -8,10 +8,14 @@
 #include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <algorithm>
 
 struct RectAnnotationItem{
     QRect rect;
     QString label;
+    int id; // instance id
+    RectAnnotationItem():rect(), label(), id(-1) { }
+    RectAnnotationItem(QRect rect, QString label, int id):rect(rect), label(label), id(id) { }
     QString toStr();
     QJsonObject toJsonObject();
     void fromJsonObject(const QJsonObject &json);
@@ -46,6 +50,21 @@ public:
     int getSelectedIdx() const { return selectedIdx; }
     RectAnnotationItem getSelectedItem() const { return items[selectedIdx]; }
 
+    int newInstanceIdForLabel(QString label){
+        int maxId=-1;
+        for (auto item:items)
+            if (item.label==label)
+                maxId = std::max(item.id, maxId);
+        for (auto op: ops){
+            if (op.item.label==label)
+                maxId = std::max(op.item.id, maxId);
+            if (op.item2.label==label)
+                maxId = std::max(op.item2.id, maxId);
+        }
+        if (maxId+1>255) throw "new instance id out of range [0,255]";
+        return maxId+1;
+    }
+
 signals:
     void dataChanged();
     void labelGiveBack(QString label);
@@ -62,8 +81,6 @@ public slots:
     void push_back(const RectAnnotationItem &item);
     void remove(int idx);
     void modify(int idx, const RectAnnotationItem &item);
-
-    void push_back(const QRect &rect, const QString &label);
 
     void allClear();
 
