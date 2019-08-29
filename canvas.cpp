@@ -69,6 +69,10 @@ bool Canvas::outOfPixmap(QPoint pos)
 
 void Canvas::mousePressEvent(QMouseEvent *event)
 {
+    if (pixmap.isNull()){
+        QWidget::mousePressEvent(event);
+        return;
+    }
     QPoint pixPos = pixelPos(event->pos());
     emit mouseMoved(pixPos);
     if (!outOfPixmap(pixPos)){
@@ -107,6 +111,10 @@ void Canvas::mousePressEvent(QMouseEvent *event)
 
 void Canvas::mouseMoveEvent(QMouseEvent *event)
 {
+    if (pixmap.isNull()){
+        QWidget::mouseMoveEvent(event);
+        return;
+    }
     QPoint pixPos = boundedPixelPos(event->pos());
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
@@ -139,8 +147,10 @@ void Canvas::setScale(qreal new_scale)
 
 void Canvas::paintEvent(QPaintEvent *event)
 {
-    if (pixmap.isNull())
+    if (pixmap.isNull()){
         QWidget::paintEvent(event);
+        return;
+    }
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setRenderHint(QPainter::HighQualityAntialiasing);
@@ -153,13 +163,12 @@ void Canvas::paintEvent(QPaintEvent *event)
     for (int i=0;i<pRectAnno->length();i++){
         QRect rect=(*pRectAnno)[i].rect;
         QString label=(*pRectAnno)[i].label;
-        // assume label in labelConfig
-        if ((*pLabelManager)[label].visible==false)
+        if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
             continue;
         if (!(*pRectAnno)[i].visible)
             continue;
 
-        if ((*pLabelManager)[label].color.isValid()){
+        if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].color.isValid()){
             p.save();
             QColor color = (*pLabelManager)[label].color;
             color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);

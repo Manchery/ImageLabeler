@@ -6,18 +6,16 @@
 #include <QRect>
 #include <QStack>
 #include <QString>
+#include <QJsonObject>
+#include <QJsonArray>
 
 struct RectAnnotationItem{
     QRect rect;
     QString label;
     bool visible;
-    QString toStr(){
-        QString topLeftStr = "("+QString::number(rect.topLeft().x())+","+
-                QString::number(rect.topLeft().y())+")";
-        QString bottomRightStr = "("+QString::number(rect.bottomRight().x())+","+
-                QString::number(rect.bottomRight().y())+")";
-        return label+" ("+topLeftStr+","+bottomRightStr+")";
-    }
+    QString toStr();
+    QJsonObject toJsonObject();
+    void fromJsonObject(const QJsonObject &json);
 };
 
 // Op means Operator
@@ -42,6 +40,9 @@ public:
     int length() const;
     RectAnnotationItem operator [](int idx) const;
     bool hasData(QString label);
+    QJsonArray toJsonArray();
+    void fromJsonObject(QJsonObject json);
+    void fromJsonArray(QJsonArray json);
 
 signals:
     void dataChanged();
@@ -53,6 +54,7 @@ signals:
     void AnnotationAdded(RectAnnotationItem item);
     void AnnotationInserted(RectAnnotationItem item, int idx);
     void AnnotationRemoved(int idx);
+    void allCleared();
     //! TODO: modify signal
 public slots:
     void push_back(const RectAnnotationItem &item);
@@ -72,7 +74,8 @@ public slots:
 private:
     QList<RectAnnotationItem> items;
     QStack<RectAnnotationOp> ops;
-    int curVersion; // ops at [0,curVersion] are done
+    // ops at [0,curVersion] are done, curVersion are valid in [-1, ops.len-1]
+    int curVersion;
 
     void checkIdx(int idx) const;
     void pushBackOp(RectAnnotationOp op);

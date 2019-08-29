@@ -4,8 +4,10 @@
 #include "canvas.h"
 #include "labeldialog.h"
 #include "labelmanager.h"
+#include "filemanager.h"
 #include <QMainWindow>
 #include <QMap>
+
 
 namespace Ui {
 class MainWindow;
@@ -31,12 +33,27 @@ public slots:
 
 private slots:
     void on_actionOpen_File_triggered();
+    void on_actionOpen_Dir_triggered();
+    void on_actionClose_triggered();
+
+    void on_actionSave_triggered();
+    void on_actionSave_As_triggered();
+
+    //    void on_actionExit_triggered();
+
     void on_actionZoom_in_triggered();
     void on_actionZoom_out_triggered();
-//    void on_actionExit_triggered();
-//    void on_actionAbout_triggered();
+    //    void on_actionAbout_triggered();
 
     qreal scaleFitWindow();
+
+
+
+    void on_actionPrevious_Image_triggered();
+
+    void on_actionNext_Image_triggered();
+
+    void on_actionLoad_triggered();
 
 private:
     Ui::MainWindow *ui;
@@ -44,6 +61,11 @@ private:
 
     LabelManager labelManager;
     RectAnnotations rectAnno;
+
+    FileManager fileManager;
+
+    void _loadJsonFile(QString fileName);
+    bool _checkUnsaved();
 
 };
 

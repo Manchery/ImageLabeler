@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include <ctime>
+#include <QtDebug>
 
 int main(int argc, char *argv[])
 {
@@ -9,6 +10,10 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     MainWindow w;
     w.show();
-
-    return a.exec();
+    try {
+        return a.exec();
+    } catch (const char *errorStr) {
+        qDebug()<<errorStr;
+        return -1;
+    }
 }

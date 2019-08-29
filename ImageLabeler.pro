@@ -26,6 +26,7 @@ CONFIG += c++14
 
 SOURCES += \
         canvas.cpp \
+        filemanager.cpp \
         labeldialog.cpp \
         labellineedit.cpp \
         labellistwidget.cpp \
@@ -37,6 +38,7 @@ SOURCES += \
 
 HEADERS += \
         canvas.h \
+        filemanager.h \
         labeldialog.h \
         labellineedit.h \
         labellistwidget.h \

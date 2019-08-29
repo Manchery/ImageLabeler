@@ -14,6 +14,10 @@
 #include <QColorDialog>
 #include <QtGlobal>
 #include <QKeyEvent>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QFile>
+#include <QFileInfo>
 #include <cmath>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -27,8 +31,6 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->scrollArea->setWidgetResizable(true);
 
     canvas->setEnabled(true);
-    QPixmap pixmap(":/pictures/img/seg_01.jpg");
-    canvas->loadPixmap(pixmap);
 
     // label config
     // signal-slot from-to: ui->list => labelconfig => canvas
@@ -57,12 +59,9 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->labelListWidget, &LabelListWidget::changeIconColor);
     connect(&labelManager, &LabelManager::visibelChanged,
             ui->labelListWidget, &LabelListWidget::changeCheckState);
+    connect(&labelManager, &LabelManager::allCleared,
+            ui->labelListWidget, &QListWidget::clear);
 
-    //! TODO: replaced by read a file;
-    labelManager.addLabel("people", Qt::green);
-    labelManager.addLabel("cat", Qt::blue, false);
-    labelManager.addLabel("dog", Qt::yellow);
-    // end label config
 
     // label data
     // signal-slot from-to: ui->action/canvas => labeldata => canvas
@@ -117,7 +116,19 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&rectAnno, &RectAnnotations::AnnotationRemoved,[this](int idx){
         ui->annoListWidget->removeCustomItemByIdx(idx);
     });
+    connect(&rectAnno, &RectAnnotations::allCleared,
+            ui->annoListWidget, &QListWidget::clear);
     // end label data
+
+    // file
+    connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
+    connect(&rectAnno, &RectAnnotations::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
+
+    connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
+    connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
+
+
+    // end file
 
     connect(canvas, &Canvas::mouseMoved, this, &MainWindow::reportMouseMoved);
     connect(canvas, &Canvas::zoomRequest, this, &MainWindow::zoomRequest);
@@ -125,6 +136,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->pushButton_addLabel, &QPushButton::clicked, [this](){
         newLabelRequest(ui->lineEdit_addLabel->text());
+        ui->lineEdit_addLabel->setText("");
     });
     connect(ui->lineEdit_addLabel, &QLineEdit::returnPressed, [this](){
         newLabelRequest(ui->lineEdit_addLabel->text());
@@ -227,11 +239,152 @@ QString MainWindow::getCurrentLabel()
 
 void MainWindow::on_actionOpen_File_triggered()
 {
-    QString file_name = QFileDialog::getOpenFileName(this, "open a file", "/", "Image Files(*.jpg *.png);;JPEG Files(*.jpg);;PNG Files(*.png)");
-    if (file_name!=""){
-        canvas->loadPixmap(file_name);
+    on_actionClose_triggered();
+    if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
+
+    QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
+                                                     "Image Files (*.jpg *.png);;JPEG Files (*.jpg);;PNG Files (*.png)");
+    if (!fileName.isNull() && !fileName.isEmpty()){
+        canvas->loadPixmap(fileName);
         adjustFitWindow();
+
+        labelManager.allClear();
+        rectAnno.allClear();
+
+        fileManager.setAll(fileName, "json");
+
+        _loadJsonFile(fileManager.getCurrentOutputFile());
+        fileManager.resetChangeNotSaved();
+
+        ui->actionSave->setEnabled(true);
+        ui->actionSave_As->setEnabled(true);
+        ui->actionLoad->setEnabled(true);
+        ui->actionClose->setEnabled(true);
     }
+}
+
+void MainWindow::on_actionOpen_Dir_triggered()
+{
+    on_actionClose_triggered();
+    if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
+
+    QString dirName = QFileDialog::getExistingDirectory(this, "open a dir", "/");
+    if (!dirName.isNull() && !dirName.isEmpty()){
+        QDir dir(dirName);
+        QStringList images = dir.entryList(QStringList() << "*.jpg" << "*.png", QDir::Files);
+        if (!dirName.endsWith('/')) dirName+="/";
+        for (auto &image: images)
+            image = dirName+image;
+
+        canvas->loadPixmap(images[0]);
+        adjustFitWindow();
+
+        labelManager.allClear();
+        rectAnno.allClear();
+
+        fileManager.setAll(images, "json");
+
+        _loadJsonFile(fileManager.getLabelFile());
+        _loadJsonFile(fileManager.getCurrentOutputFile());
+        fileManager.resetChangeNotSaved();
+
+        ui->actionSave->setEnabled(true);
+        ui->actionSave_As->setEnabled(true);
+        ui->actionLoad->setEnabled(true);
+        ui->actionClose->setEnabled(true);
+    }
+}
+
+void MainWindow::on_actionLoad_triggered()
+{
+    if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
+        QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
+                                                         "Json Files (*.json)");
+        _loadJsonFile(fileName);
+    }
+}
+
+void MainWindow::on_actionPrevious_Image_triggered()
+{
+    if (!_checkUnsaved()) return;
+
+    //! TODO: whether clear
+    labelManager.allClear();
+    rectAnno.allClear();
+
+    fileManager.prevFile();
+    _loadJsonFile(fileManager.getLabelFile());
+    _loadJsonFile(fileManager.getCurrentOutputFile());
+    fileManager.resetChangeNotSaved();
+
+    canvas->loadPixmap(fileManager.getCurrentImageFile());
+    adjustFitWindow();
+}
+
+void MainWindow::on_actionNext_Image_triggered()
+{
+    if (!_checkUnsaved()) return;
+
+    //! TODO: whether clear
+    labelManager.allClear();
+    rectAnno.allClear();
+
+    fileManager.nextFile();
+    _loadJsonFile(fileManager.getLabelFile());
+    _loadJsonFile(fileManager.getCurrentOutputFile());
+    fileManager.resetChangeNotSaved();
+
+    canvas->loadPixmap(fileManager.getCurrentImageFile());
+    adjustFitWindow();
+}
+
+void MainWindow::on_actionClose_triggered()
+{
+    if (fileManager.getMode() == Close) return;
+
+    if (!_checkUnsaved()) return;
+
+    if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
+        canvas->loadPixmap(QPixmap());
+        labelManager.allClear();
+        rectAnno.allClear();
+    }
+    fileManager.close();
+    ui->actionSave->setEnabled(false);
+    ui->actionSave_As->setEnabled(false);
+    ui->actionLoad->setEnabled(false);
+    ui->actionClose->setEnabled(false);
+}
+
+
+void MainWindow::on_actionSave_triggered()
+{
+    if (fileManager.getMode() == SingleImage){
+        QJsonObject json;
+        json.insert("labels", labelManager.toJsonArray());
+        json.insert("annotations", rectAnno.toJsonArray());
+        FileManager::saveJson(json, fileManager.getCurrentOutputFile());
+    } else if (fileManager.getMode() == MultiImage){
+        QJsonObject labelJson;
+        labelJson.insert("labels", labelManager.toJsonArray());
+        FileManager::saveJson(labelJson, fileManager.getLabelFile());
+
+        QJsonObject annoJson;
+        annoJson.insert("annotations", rectAnno.toJsonArray());
+        FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
+    }
+}
+
+void MainWindow::on_actionSave_As_triggered()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "open a file", "/",
+                                                    "Json Files (*json)");
+    if (!fileName.endsWith("json"))
+        fileName+=".json";
+    QJsonObject json;
+    json.insert("labels", labelManager.toJsonArray());
+    json.insert("annotations", rectAnno.toJsonArray());
+    FileManager::saveJson(json, fileName);
 }
 
 void MainWindow::on_actionZoom_in_triggered()
@@ -254,6 +407,7 @@ qreal MainWindow::scaleFitWindow()
     qreal a2 = static_cast<qreal>(w2)/h2;
     return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
 }
+
 
 void MainWindow::adjustFitWindow()
 {
@@ -284,3 +438,39 @@ void MainWindow::reportMouseMoved(QPoint pos)
 {
     ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
 }
+
+
+
+void MainWindow::_loadJsonFile(QString fileName)
+{
+    QFileInfo checkFile=QFileInfo(fileName);
+    if (checkFile.exists() && checkFile.isFile()){
+        QJsonObject json = FileManager::readJson(fileName);
+        labelManager.fromJsonObject(json);
+        rectAnno.fromJsonObject(json);
+    }
+}
+
+// return false to cancel, true to safety to close
+bool MainWindow::_checkUnsaved()
+{
+    if (fileManager.hasChangeNotSaved()){
+        int ret = QMessageBox::warning(this, QObject::tr("Warning"),
+                                       QObject:: tr("The document has been modified.\n" "Do you want to save your changes?"),
+                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                                       QMessageBox::Save);
+        switch (ret) {
+        case QMessageBox::Save:
+            on_actionSave_triggered();
+            break;
+        case QMessageBox::Discard:
+            break;
+        case QMessageBox::Cancel:
+            return false;
+        default:
+            break;
+        }
+    }
+    return true;
+}
+

@@ -45,10 +45,12 @@
    </property>
    <widget class="QMenu" name="menu_file">
     <property name="title">
-     <string>文件</string>
+     <string>File</string>
     </property>
     <addaction name="actionOpen_File"/>
-    <addaction name="actionOpen_Folder"/>
+    <addaction name="actionOpen_Dir"/>
+    <addaction name="actionLoad"/>
+    <addaction name="actionClose"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
@@ -58,7 +60,7 @@
    </widget>
    <widget class="QMenu" name="menu_edit">
     <property name="title">
-     <string>编辑</string>
+     <string>Edit</string>
     </property>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
@@ -66,10 +68,13 @@
     <addaction name="actionZoom_in"/>
     <addaction name="actionZoom_out"/>
     <addaction name="actionFit_Window"/>
+    <addaction name="separator"/>
+    <addaction name="actionPrevious_Image"/>
+    <addaction name="actionNext_Image"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
-     <string>帮助</string>
+     <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
    </widget>
@@ -85,13 +90,16 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOpen_File"/>
-   <addaction name="actionOpen_Folder"/>
+   <addaction name="actionOpen_Dir"/>
    <addaction name="actionSave"/>
    <addaction name="actionSave_As"/>
+   <addaction name="actionClose"/>
    <addaction name="actionExit"/>
    <addaction name="separator"/>
    <addaction name="actionUndo"/>
    <addaction name="actionRedo"/>
+   <addaction name="actionPrevious_Image"/>
+   <addaction name="actionNext_Image"/>
    <addaction name="actionZoom_in"/>
    <addaction name="actionZoom_out"/>
    <addaction name="actionFit_Window"/>
@@ -167,13 +175,16 @@
     <string>Open File</string>
    </property>
   </action>
-  <action name="actionOpen_Folder">
+  <action name="actionOpen_Dir">
    <property name="icon">
     <iconset resource="resource.qrc">
      <normaloff>:/icons/icons/open.png</normaloff>:/icons/icons/open.png</iconset>
    </property>
    <property name="text">
-    <string>Open Folder</string>
+    <string>Open Dir</string>
+   </property>
+   <property name="toolTip">
+    <string>Open Dir</string>
    </property>
   </action>
   <action name="actionSave">
@@ -272,6 +283,49 @@
    </property>
    <property name="text">
     <string>Fit Window</string>
+   </property>
+  </action>
+  <action name="actionClose">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Close</string>
+   </property>
+  </action>
+  <action name="actionPrevious_Image">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/icons/prev.png</normaloff>:/icons/icons/prev.png</iconset>
+   </property>
+   <property name="text">
+    <string>Previous Image</string>
+   </property>
+  </action>
+  <action name="actionNext_Image">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="resource.qrc">
+     <normaloff>:/icons/icons/next.png</normaloff>:/icons/icons/next.png</iconset>
+   </property>
+   <property name="text">
+    <string>Next Image</string>
+   </property>
+  </action>
+  <action name="actionLoad">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Load Labels and Annotations</string>
+   </property>
+   <property name="toolTip">
+    <string>Load</string>
    </property>
   </action>
   <zorder>annotationDockWidget</zorder>
