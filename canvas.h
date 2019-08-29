@@ -4,6 +4,7 @@
 #include "rectannotations.h"
 #include "labelmanager.h"
 #include <QWidget>
+#include <QRect>
 
 enum TaskMode{
     DETECTION,SEGMENTATION
@@ -15,6 +16,11 @@ enum CanvasMode{
 enum CreateMode{
     RECTANGLE
 };
+
+enum EditingRectEdge{
+    TOP, BOTTOM, LEFT, RIGHT
+};
+
 class Canvas : public QWidget
 {
     Q_OBJECT    
@@ -31,19 +37,42 @@ public:
 
     void mouseMoveEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
-//    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 //    void wheelEvent(QWheelEvent *event);
+
+    QString modeString() const {
+        QString modeStr("");
+        if (task == DETECTION) modeStr+="Detection, ";
+        else if (task == SEGMENTATION) modeStr+="Segmentation, ";
+
+        if (mode == DRAW) modeStr+="Draw, ";
+        else if (mode == EDIT) modeStr+="Edit, ";
+
+        if (createMode == RECTANGLE) modeStr+="2D Rectangle";
+
+        return modeStr;
+    }
 
 signals:
     void mouseMoved(QPoint pos);
     void zoomRequest(qreal delta, QPoint pos);
     void newRectangleAnnotated(QRect newRect);
+    void modifySelectedRectRequest(int idx, QRect rect);
     void removeRectRequest(int idx);
+    void modeChanged(QString mode);
 
 public slots:
     void loadPixmap(QPixmap);
     void setScale(qreal);
     void paintEvent(QPaintEvent*);
+    void changeCanvasModeRequest(){
+        if (pRectAnno->getSelectedIdx()==-1)
+            mode = DRAW;
+        else {
+            mode = EDIT;
+        }
+        emit modeChanged(modeString());
+    }
 
 private:
     QPixmap pixmap;
@@ -63,6 +92,10 @@ private:
 
     const RectAnnotations *pRectAnno;
     const LabelManager* pLabelManager;
+
+    QRect editingRect;
+    bool editing;
+    EditingRectEdge editingRectEdge;
 };
 
 #endif // CANVAS_H

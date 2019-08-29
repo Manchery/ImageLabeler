@@ -26,11 +26,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    mousePosLabel = new QLabel();
+    ui->statusBar->addPermanentWidget(mousePosLabel);
+
     canvas = new Canvas(&labelManager, &rectAnno, ui->scrollArea);
     ui->scrollArea->setWidget(canvas);
 //    ui->scrollArea->setWidgetResizable(true);
 
     canvas->setEnabled(true);
+
+    connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
 
     // label config
     // signal-slot from-to: ui->list => labelconfig => canvas
@@ -66,7 +71,17 @@ MainWindow::MainWindow(QWidget *parent) :
     // label data
     // signal-slot from-to: ui->action/canvas => labeldata => canvas
     ui->annoListWidget->setSortingEnabled(false);
-    ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    connect(ui->annoListWidget, &QListWidget::itemSelectionChanged, [this](){
+        auto items = ui->annoListWidget->selectedItems();
+        if (items.length()==0){
+            rectAnno.setSelected(-1);
+        }else{
+            rectAnno.setSelected(ui->annoListWidget->row(items[0]));
+        }
+        canvas->changeCanvasModeRequest();
+    });
 
     ui->annoListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->annoListWidget, &QListWidget::customContextMenuRequested,
@@ -91,8 +106,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionRedo, &QAction::triggered, &rectAnno, &RectAnnotations::redo);
 
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
-
     connect(canvas, &Canvas::removeRectRequest, &rectAnno, &RectAnnotations::remove);
+    connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
+        rectAnno.modify(idx, RectAnnotationItem{rect, rectAnno.getSelectedItem().label,
+                        rectAnno.getSelectedItem().visible});
+    });
 
 
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
@@ -105,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(&rectAnno, &RectAnnotations::labelGiveBack, this, &MainWindow::newLabelRequest);
     connect(&rectAnno, &RectAnnotations::dataChanged, canvas, qOverload<>(&QWidget::update));
+
     connect(&rectAnno, &RectAnnotations::AnnotationAdded,[this](RectAnnotationItem item){
         ui->annoListWidget->addCustomItem(item.toStr(), labelManager.getColor(item.label),
                                           item.visible);
@@ -112,6 +131,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&rectAnno, &RectAnnotations::AnnotationInserted,[this](RectAnnotationItem item, int idx){
         ui->annoListWidget->insertCustomItem(item.toStr(), labelManager.getColor(item.label),
                                           item.visible, idx);
+    });
+    connect(&rectAnno, &RectAnnotations::AnnotationModified,[this](RectAnnotationItem item, int idx){
+        ui->annoListWidget->changeTextByIdx(idx, item.toStr());
     });
     connect(&rectAnno, &RectAnnotations::AnnotationRemoved,[this](int idx){
         ui->annoListWidget->removeCustomItemByIdx(idx);
@@ -455,9 +477,12 @@ void MainWindow::zoomRequest(qreal delta, QPoint pos)
 
 void MainWindow::reportMouseMoved(QPoint pos)
 {
-    ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
+    mousePosLabel->setText("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
+//    ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
 }
-
+void MainWindow::reportCanvasMode(QString mode){
+    ui->statusBar->showMessage(mode, 5000);
+}
 
 
 void MainWindow::_loadJsonFile(QString fileName)

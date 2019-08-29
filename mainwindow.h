@@ -7,6 +7,7 @@
 #include "filemanager.h"
 #include <QMainWindow>
 #include <QMap>
+#include <QLabel>
 
 
 namespace Ui {
@@ -23,6 +24,8 @@ public:
 
 public slots:
     void reportMouseMoved(QPoint pos);
+    void reportCanvasMode(QString mode);
+
     void zoomRequest(qreal delta, QPoint pos);
     void adjustFitWindow();
     void getNewRect(QRect rect);
@@ -65,6 +68,8 @@ private:
     RectAnnotations rectAnno;
 
     FileManager fileManager;
+
+    QLabel *mousePosLabel;
 
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();

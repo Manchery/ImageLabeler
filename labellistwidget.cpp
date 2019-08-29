@@ -67,6 +67,12 @@ void LabelListWidget::changeIconColorByIdx(int idx, QColor color)
     QPixmap pixmap(16,16); pixmap.fill(color); item->setIcon(pixmap);
 }
 
+void LabelListWidget::changeTextByIdx(int idx, QString text)
+{
+    auto item = this->item(idx);
+    item->setText(text);
+}
+
 QListWidgetItem *LabelListWidget::_findItemByText(QString label){
     auto items = this->findItems(label, Qt::MatchExactly);
     if (items.length()!=1)

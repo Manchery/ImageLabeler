@@ -63,7 +63,7 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
     }
 }
 
-RectAnnotations::RectAnnotations(QObject *parent) : QObject(parent), curVersion(-1) {
+RectAnnotations::RectAnnotations(QObject *parent) : QObject(parent), curVersion(-1), selectedIdx(-1) {
 
 }
 
@@ -90,7 +90,8 @@ void RectAnnotations::modify(int idx, const RectAnnotationItem &item){
     checkIdx(idx);
     pushBackOp(RectAnnotationOp{MODIFY, idx, items[idx], item}); // before and after
     items[idx] = item;
-    //! TODO: modify signal
+
+    emit AnnotationModified(item, idx);
     emit dataChanged();
     emitUndoRedoEnable();
 }
@@ -116,7 +117,7 @@ void RectAnnotations::redo(){
         items.removeAt(op.idx);
         emit AnnotationRemoved(op.idx);
     }else if (op.opClass==MODIFY){
-        //! TODO: modify signal
+        emit AnnotationModified(op.item2, op.idx);
         items[op.idx] = op.item2;
     }
     emit dataChanged();
@@ -137,8 +138,8 @@ void RectAnnotations::undo(){
         emit AnnotationInserted(op.item, op.idx);
         emit labelGiveBack(op.item.label);
     }else if (op.opClass==MODIFY){
-        //! TODO: modify signal
-        items[op.idx] = op.item2;
+        emit AnnotationModified(op.item, op.idx);
+        items[op.idx] = op.item;
     }
     emit dataChanged();
     emitUndoRedoEnable();
@@ -146,6 +147,12 @@ void RectAnnotations::undo(){
 
 void RectAnnotations::setVisible(int idx, bool visible){
     items[idx].visible = visible;
+    emit dataChanged();
+}
+
+void RectAnnotations::setSelected(int idx)
+{
+    selectedIdx=idx;
     emit dataChanged();
 }
 
@@ -203,6 +210,7 @@ void RectAnnotations::allClear(){
     items.clear();
     ops.clear();
     curVersion=-1;
+    selectedIdx=-1;
 //    emit dataChanged();
     emitUndoRedoEnable();
     emit allCleared();

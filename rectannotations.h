@@ -44,6 +44,9 @@ public:
     void fromJsonObject(QJsonObject json);
     void fromJsonArray(QJsonArray json);
 
+    int getSelectedIdx() const { return selectedIdx; }
+    RectAnnotationItem getSelectedItem() const { return items[selectedIdx]; }
+
 signals:
     void dataChanged();
     void labelGiveBack(QString label);
@@ -53,15 +56,14 @@ signals:
 
     void AnnotationAdded(RectAnnotationItem item);
     void AnnotationInserted(RectAnnotationItem item, int idx);
+    void AnnotationModified(RectAnnotationItem item, int idx);
     void AnnotationRemoved(int idx);
     void allCleared();
-    //! TODO: modify signal
 public slots:
     void push_back(const RectAnnotationItem &item);
     void remove(int idx);
     void modify(int idx, const RectAnnotationItem &item);
 
-//    void modify(int idx, const QRect &rect, const QString &label);
     void push_back(const QRect &rect, const QString &label, bool visible);
 
     void allClear();
@@ -70,12 +72,15 @@ public slots:
     void undo();
 
     void setVisible(int idx, bool visible);
+    void setSelected(int idx);
 
 private:
     QList<RectAnnotationItem> items;
     QStack<RectAnnotationOp> ops;
     // ops at [0,curVersion] are done, curVersion are valid in [-1, ops.len-1]
     int curVersion;
+
+    int selectedIdx;
 
     void checkIdx(int idx) const;
     void pushBackOp(RectAnnotationOp op);
