@@ -77,7 +77,6 @@ FileManager::FileManager(QObject *parent) : QObject(parent)
 
 FileManager::FileManager(QString fileName, QString outputExtension, QObject *parent) : QObject(parent)
 {
-
     setAll(fileName, outputExtension);
 }
 
@@ -107,7 +106,7 @@ void FileManager::close()
     changeNotSaved=false;
     emit prevEnableChanged(false);
     emit nextEnableChanged(false);
-    emit fileListChanged();
+    emit fileListSetup();
 }
 
 int FileManager::count(){ return imageFiles.length(); }
@@ -122,7 +121,7 @@ void FileManager::setAll(QString fileName, QString outputExtension)
     imageFiles<<fileName;
     outputFiles<<getDir(fileName) + getName(fileName) + "_labels_annotations." + outputExtension;
     emitPrevNextEnable();
-    emit fileListChanged();
+    emit fileListSetup();
 }
 
 void FileManager::setAll(QStringList fileNames, QString outputExtension)
@@ -138,7 +137,7 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
     }
     labelFile = getDir(fileNames[0]) + "labels.json";
     emitPrevNextEnable();
-    emit fileListChanged();
+    emit fileListSetup();
 }
 
 void FileManager::setChangeNotSaved() { changeNotSaved=true; }

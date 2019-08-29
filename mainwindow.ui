@@ -221,6 +221,9 @@
    </property>
   </action>
   <action name="actionAuto_Save">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Auto Save</string>
    </property>

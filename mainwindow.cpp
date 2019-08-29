@@ -129,7 +129,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
 
-    connect(&fileManager, &FileManager::fileListChanged, [this](){
+    connect(&fileManager, &FileManager::fileListSetup, [this](){
         if (fileManager.getMode() == Close) return;
         ui->fileListWidget->clear();
         for (const QString &image: fileManager.allImageFiles()){
@@ -474,20 +474,26 @@ void MainWindow::_loadJsonFile(QString fileName)
 bool MainWindow::_checkUnsaved()
 {
     if (fileManager.hasChangeNotSaved()){
-        int ret = QMessageBox::warning(this, QObject::tr("Warning"),
-                                       QObject:: tr("The document has been modified.\n" "Do you want to save your changes?"),
-                                       QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-                                       QMessageBox::Save);
-        switch (ret) {
-        case QMessageBox::Save:
+        if (ui->actionAuto_Save->isChecked())
             on_actionSave_triggered();
-            break;
-        case QMessageBox::Discard:
-            break;
-        case QMessageBox::Cancel:
-            return false;
-        default:
-            break;
+        else{
+            int ret = QMessageBox::warning(this, QObject::tr("Warning"),
+                                           QObject:: tr("The document has been modified.\n"
+                                                        "Do you want to save your changes?\n"
+                                                        "Note: you can check AutoSave option in the menu.\n"),
+                                           QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                                           QMessageBox::Save);
+            switch (ret) {
+            case QMessageBox::Save:
+                on_actionSave_triggered();
+                break;
+            case QMessageBox::Discard:
+                break;
+            case QMessageBox::Cancel:
+                return false;
+            default:
+                break;
+            }
         }
     }
     return true;
