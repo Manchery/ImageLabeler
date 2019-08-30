@@ -2,7 +2,6 @@
 #define ANNOTATIONCONTAINER_H
 
 #include "annotationitem.h"
-#include "rectannotationitem.h"
 #include <QObject>
 #include <QList>
 #include <QRect>

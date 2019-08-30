@@ -15,4 +15,6 @@ extern bool onRectBottom(QPoint pos, QRect rect);
 extern bool onRectLeft(QPoint pos, QRect rect);
 extern bool onRectRight(QPoint pos, QRect rect);
 
+const int DEFAULT_PEN_WIDTH=15;
+
 #endif // UTILS_H

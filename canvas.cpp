@@ -1,5 +1,6 @@
 #include "canvas.h"
 #include "segannotationitem.h"
+#include "rectannotationitem.h"
 #include "utils.h"
 #include <QPainter>
 #include <QMouseEvent>
@@ -13,6 +14,7 @@ Canvas::Canvas(const LabelManager *pLabelConfig, const AnnotationContainer *pLab
     pLabelManager(pLabelConfig),
     scale(1.0)
 {
+    lastPenWidth=DEFAULT_PEN_WIDTH;
     mousePos=QPoint(0,0);
     setMouseTracking(true);
 }
@@ -126,7 +128,7 @@ void Canvas::paintEvent(QPaintEvent *event)
             p.setOpacity(0.5);
             p.drawPixmap(0,0,colorMap);
 
-            if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
+            if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN) && !outOfPixmap(mousePos)){
                 p.save();
                 if (drawMode==SQUAREPEN){
                     p.setPen(QPen(Qt::white, curPenWidth, Qt::SolidLine, Qt::SquareCap, Qt::BevelJoin));
@@ -137,6 +139,23 @@ void Canvas::paintEvent(QPaintEvent *event)
                 p.restore();
             }
 
+            p.end();
+        }else if (mode == SELECT){
+            QPixmap colorMap(pixmap.size());
+            colorMap.fill(QColor(0,0,0,0));
+            QPainter p0(&colorMap);
+
+            for (int i=0;i<pAnnoContainer->length();i++){
+                auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
+                QString label = item->label;
+                QColor color = (i==pAnnoContainer->getSelectedIdx())?(*pLabelManager)[label].color:QColor(0,0,0,0);
+                for (auto stroke: item->strokes)
+                    stroke.drawSelf(p0,color);
+            }
+            p0.end();
+
+            p.setOpacity(0.5);
+            p.drawPixmap(0,0,colorMap);
             p.end();
         }
     }
@@ -149,7 +168,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
         return;
     }
     QPoint pixPos = pixelPos(event->pos());
-    qDebug()<<"mouse press"<<pixPos.x()<<" "<<pixPos.y();
+//    qDebug()<<"mouse press"<<pixPos.x()<<" "<<pixPos.y();
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
@@ -234,7 +253,13 @@ void Canvas::mousePressEvent(QMouseEvent *event)
                     }
                 }
             }else if (event->button()==Qt::RightButton){
-                if (curStrokes.length()>0){
+                if (drawMode!=POLYGEN || strokeDrawing==false){
+                    if (curStrokes.length()>0){
+                        curStrokes.pop_back();
+                        update();
+                    }
+                }else{ //drawMode == POLYGEN && strokeDrawing
+                    strokeDrawing=false;
                     curStrokes.pop_back();
                     update();
                 }
@@ -250,8 +275,8 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
         QWidget::mouseMoveEvent(event);
         return;
     }
+    mousePos = pixelPos(event->pos());
     QPoint pixPos = boundedPixelPos(event->pos());
-    mousePos = pixPos;
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
@@ -362,24 +387,24 @@ QString Canvas::modeString() const {
     QString modeStr("");
 
     switch(task){
-    case DETECTION:  modeStr+="Detection, "; break;
-    case SEGMENTATION: modeStr+="Segmentation, "; break;
+    case DETECTION:  modeStr+="Detection"; break;
+    case SEGMENTATION: modeStr+="Segmentation"; break;
     default: modeStr+="Unknown task"; break;
     }
 
     switch (mode) {
-    case DRAW: modeStr+="Draw, "; break;
-    case SELECT: modeStr+="Select, "; break;
+    case DRAW: modeStr+=", Draw"; break;
+    case SELECT: modeStr+=", Select"; break;
 //    default: modeStr+="Unknown mode"; break;
     }
 
     if (mode==DRAW){
         switch (drawMode) {
-        case RECTANGLE: modeStr+="Rectangle"; break;
-        case CONTOUR: modeStr+="Contour"; break;
-        case SQUAREPEN: modeStr+="Square Pen"; break;
-        case CIRCLEPEN: modeStr+="Circle Pen"; break;
-        case POLYGEN: modeStr+="Polygen Contour"; break;
+        case RECTANGLE: modeStr+=", Rectangle"; break;
+        case CONTOUR: modeStr+=", Contour"; break;
+        case SQUAREPEN: modeStr+=", Square Pen"; break;
+        case CIRCLEPEN: modeStr+=", Circle Pen"; break;
+        case POLYGEN: modeStr+=", Polygen Contour"; break;
 //        default: modeStr+="Unknown mode"; break;
         }
     }
@@ -404,6 +429,34 @@ void Canvas::changeTask(TaskMode _task) {
         strokeDrawing=false;
         break;
     default:
+        break;
+    }
+    emit modeChanged(modeString());
+}
+
+void Canvas::changeDrawMode(DrawMode _draw)
+{
+    drawMode=_draw;
+    switch (drawMode) {
+    case RECTANGLE:
+        curPoints.clear();
+        editing=false;
+        break;
+    case CIRCLEPEN:
+    case SQUAREPEN:
+        if (strokeDrawing==true){
+            curStrokes.pop_back();
+            strokeDrawing=false;
+        }
+        curPenWidth = lastPenWidth;
+        break;
+    case CONTOUR:
+    case POLYGEN:
+        if (strokeDrawing==true){
+            curStrokes.pop_back();
+            strokeDrawing=false;
+        }
+        curPenWidth=1;
         break;
     }
     emit modeChanged(modeString());

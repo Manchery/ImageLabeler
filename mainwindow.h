@@ -9,6 +9,7 @@
 #include <QMap>
 #include <QLabel>
 #include <QComboBox>
+#include <QSpinBox>
 
 
 namespace Ui {
@@ -63,6 +64,9 @@ private slots:
     void enableFileActions();
     void unableFileActions();
 
+    void taskModeChanged();
+    void drawModeChanged();
+
 private:
     Ui::MainWindow *ui;
     Canvas *canvas;
@@ -74,6 +78,8 @@ private:
 
     QLabel *mousePosLabel;
     QComboBox *taskComboBox;
+    QComboBox *drawComboBox;
+    QSpinBox *penWidthBox;
 
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();

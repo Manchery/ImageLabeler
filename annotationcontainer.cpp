@@ -1,4 +1,6 @@
 #include "annotationcontainer.h"
+#include "rectannotationitem.h"
+#include "segannotationitem.h"
 #include <QtDebug>
 using std::shared_ptr;
 
@@ -126,8 +128,12 @@ void AnnotationContainer::fromJsonArray(QJsonArray json, QString format)
     for (int i=0;i<json.size();i++){
         QJsonValue value = json.at(i);
         if (value.isObject()){
-            if (format == "Rect2D"){
+            if (format == "Detection "){
                 shared_ptr<RectAnnotationItem> item = std::make_shared<RectAnnotationItem>();
+                item->fromJsonObject(value.toObject());
+                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+            }else if (format == "Segmentation "){
+                shared_ptr<SegAnnotationItem> item = std::make_shared<SegAnnotationItem>();
                 item->fromJsonObject(value.toObject());
                 this->push_back(std::static_pointer_cast<AnnotationItem>(item));
             }

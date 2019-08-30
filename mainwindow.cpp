@@ -3,6 +3,7 @@
 #include "labeldialog.h"
 #include "canvas.h"
 #include "utils.h"
+#include "rectannotationitem.h"
 #include <QLabel>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -33,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
 
+    // tool bar and status bar
     taskComboBox = new QComboBox(ui->mainToolBar);
     taskComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     taskComboBox->addItem("Detection ");
@@ -41,24 +43,36 @@ MainWindow::MainWindow(QWidget *parent) :
     taskComboBox->addItem("3D Segmentation ");
     ui->mainToolBar->insertWidget(ui->actionOpen_File, taskComboBox);
 
+    drawComboBox = new QComboBox(ui->mainToolBar);
+    drawComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    drawComboBox->addItem("Rectangle");
+    ui->mainToolBar->insertWidget(ui->actionOpen_File, drawComboBox);
+
+    penWidthBox = new QSpinBox(ui->mainToolBar);
+    penWidthBox->setRange(1,100);
+    penWidthBox->setSingleStep(1);
+    penWidthBox->setValue(DEFAULT_PEN_WIDTH);
+    penWidthBox->setWrapping(false);
+    penWidthBox->setEnabled(false); // because the defalut mode is detection
+    ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
+
     canvas->changeTask(DETECTION);
 
-    connect(taskComboBox, &QComboBox::currentTextChanged, [this](QString text){
-        if (text == "Detection ") canvas->changeTask(DETECTION);
-        if (text == "Segmentation ") canvas->changeTask(SEGMENTATION);
-        if (text == "3D Detection ") canvas->changeTask(DETECTION3D);
-        if (text == "3D Segmentation ") canvas->changeTask(SEGMENTATION3D);
-    });
+    connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
+    connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
+//    connect(penWidthBox, &QSpinBox::valueChanged, canvas, &Canvas::setPenWidth);
+    connect(penWidthBox, SIGNAL(valueChanged(int)), canvas, SLOT(setPenWidth(int)));
 
     unableFileActions();
 
     mousePosLabel = new QLabel();
     ui->statusBar->addPermanentWidget(mousePosLabel);
 
+    //! end tool bar and status bar
 
 
-    // label config
-    // signal-slot from-to: ui->list => labelconfig => canvas
+    // label manager
+    // signal-slot from-to: ui->list => label manager => canvas
     ui->labelListWidget->setSortingEnabled(true);
     ui->labelListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
@@ -90,11 +104,11 @@ MainWindow::MainWindow(QWidget *parent) :
     //! maybe label give back
     connect(&annoContainer, &AnnotationContainer::labelGiveBack, this, &MainWindow::newLabelRequest);
 
-    //! end label config
+    //! end label manager
 
 
-    // label data
-    // signal-slot from-to: ui->action/canvas => labeldata => canvas
+    // annotations container
+    // signal-slot from-to: ui->action/canvas => annotations => canvas
     ui->annoListWidget->setSortingEnabled(false);
     ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
@@ -163,7 +177,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&annoContainer, &AnnotationContainer::allCleared,
             ui->annoListWidget, &QListWidget::clear);
 
-    //! end label data
+    //! end annotations
 
     // file
     ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -208,10 +222,57 @@ MainWindow::MainWindow(QWidget *parent) :
     // end labeldialog
 }
 
+void MainWindow::taskModeChanged()
+{
+    QString text = taskComboBox->currentText();
+
+    if (text == "Detection ") canvas->changeTask(DETECTION);
+    if (text == "Segmentation ") canvas->changeTask(SEGMENTATION);
+    if (text == "3D Detection ") canvas->changeTask(DETECTION3D);
+    if (text == "3D Segmentation ") canvas->changeTask(SEGMENTATION3D);
+
+    if (text == "Detection " || text == "3D Detection "){
+        drawComboBox->clear();
+        drawComboBox->addItem("Rectangle");
+        ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        penWidthBox->setEnabled(false);
+    }else if (text == "Segmentation " || text == "3D Segmentation "){
+        drawComboBox->clear();
+        drawComboBox->addItem("Circle Pen");
+        drawComboBox->addItem("Square Pen");
+        drawComboBox->addItem("Contour");
+        drawComboBox->addItem("Polygonal Contour");
+        penWidthBox->setEnabled(true);
+        ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    }
+
+    if (text.startsWith("3D")){
+        ui->actionOpen_File->setEnabled(false);
+    }
+}
+
+void MainWindow::drawModeChanged()
+{
+    QString text = drawComboBox->currentText();
+
+    if (text=="Rectangle") canvas->changeDrawMode(RECTANGLE);
+    if (text=="Circle Pen") canvas->changeDrawMode(CIRCLEPEN);
+    if (text=="Square Pen") canvas->changeDrawMode(SQUAREPEN);
+    if (text=="Contour") canvas->changeDrawMode(CONTOUR);
+    if (text=="Polygonal Contour") canvas->changeDrawMode(POLYGEN);
+
+    if (text=="Rectangle"||text=="Contour"||text=="Polygonal Contour"){
+        penWidthBox->setEnabled(false);
+        penWidthBox->setValue(1);
+    }else if (text=="Circle Pen"||text=="Square Pen"){
+        penWidthBox->setEnabled(true);
+        penWidthBox->setValue(canvas->getLastPenWidth());
+    }
+}
+
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete canvas;
 }
 
 void MainWindow::getNewRect(QRect rect)
@@ -339,7 +400,11 @@ void MainWindow::on_actionOpen_File_triggered()
         labelManager.allClear();
         annoContainer.allClear();
 
-        fileManager.setAll(fileName, "json");
+        if (taskComboBox->currentText()=="Detection "){
+            fileManager.setAll(fileName, "_detect_labels_annotations.json");
+        }else if (taskComboBox->currentText()=="Segmentation "){
+            fileManager.setAll(fileName, "_segment_labels_annotations.json");
+        }
 
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
@@ -367,7 +432,15 @@ void MainWindow::on_actionOpen_Dir_triggered()
         labelManager.allClear();
         annoContainer.allClear();
 
-        fileManager.setAll(images, "json");
+        if (taskComboBox->currentText()=="Detection "){
+            fileManager.setAll(images, "_detect_annotations.json");
+        }else if (taskComboBox->currentText()=="Segmentation "){
+            fileManager.setAll(images, "_segment_annotations.json");
+        }else if (taskComboBox->currentText()=="3D Detection "){
+            //! TODO
+        }else if (taskComboBox->currentText()=="3D Segmentation "){
+
+        }
 
         _loadJsonFile(fileManager.getLabelFile());
         _loadJsonFile(fileManager.getCurrentOutputFile());
@@ -547,7 +620,7 @@ void MainWindow::_loadJsonFile(QString fileName)
     if (checkFile.exists() && checkFile.isFile()){
         QJsonObject json = FileManager::readJson(fileName);
         labelManager.fromJsonObject(json);
-        annoContainer.fromJsonObject(json, "Rect2D");
+        annoContainer.fromJsonObject(json, taskComboBox->currentText());
     }
 }
 

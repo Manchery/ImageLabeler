@@ -30,6 +30,8 @@ public:
 
     const QPixmap& getPixmap() const;
     qreal getScale() const;
+    TaskMode getTaskMode() const { return task; }
+    int getLastPenWidth() const  { return lastPenWidth; }
 
     void mouseMoveEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
@@ -48,6 +50,7 @@ public:
     //! mode
     QString modeString() const;
     void changeTask(TaskMode _task);
+    void changeDrawMode(DrawMode _draw);
 
 signals:
     void mouseMoved(QPoint pos);
@@ -65,6 +68,12 @@ public slots:
     void setScale(qreal);
     void paintEvent(QPaintEvent*);
     void changeCanvasModeRequest();
+    void setPenWidth(int width) {
+        curPenWidth = width;
+        if (drawMode==CIRCLEPEN || drawMode==SQUAREPEN)
+            lastPenWidth = width;
+        update();
+    }
 
 private:
     QPixmap pixmap;
@@ -97,6 +106,7 @@ private:
 
     //! for seg drawing
     bool strokeDrawing;
+    int lastPenWidth;
     int curPenWidth;
     QList<SegStroke> curStrokes;
 };

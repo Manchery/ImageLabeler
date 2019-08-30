@@ -119,7 +119,7 @@ void FileManager::setAll(QString fileName, QString outputExtension)
     mode = SingleImage;
     curIdx = 0;
     imageFiles<<fileName;
-    outputFiles<<getDir(fileName) + getName(fileName) + "_labels_annotations." + outputExtension;
+    outputFiles<<getDir(fileName) + getName(fileName) + outputExtension;
     emitPrevNextEnable();
     emit fileListSetup();
 }
@@ -133,7 +133,7 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
     fileNames.sort();
     for (auto fileName: fileNames){
         imageFiles<<fileName;
-        outputFiles<<getDir(fileName) + getName(fileName) + "_annotations." + outputExtension;
+        outputFiles<<getDir(fileName) + getName(fileName) + outputExtension;
     }
     labelFile = getDir(fileNames[0]) + "labels.json";
     emitPrevNextEnable();
