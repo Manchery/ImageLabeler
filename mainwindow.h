@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QMap>
 #include <QLabel>
+#include <QComboBox>
 
 
 namespace Ui {
@@ -28,7 +29,10 @@ public slots:
 
     void zoomRequest(qreal delta, QPoint pos);
     void adjustFitWindow();
+
     void getNewRect(QRect rect);
+    void getNewStrokes(const QList<SegStroke> &strokes);
+
     void newLabelRequest(QString newLabel);
     void removeLabelRequest(QString label);
     void provideLabelContextMenu(const QPoint &pos);
@@ -44,6 +48,10 @@ private slots:
     void on_actionSave_triggered();
     void on_actionSave_As_triggered();
 
+    void on_actionPrevious_Image_triggered();
+    void on_actionNext_Image_triggered();
+    void on_actionLoad_triggered();
+
     //    void on_actionExit_triggered();
 
     void on_actionZoom_in_triggered();
@@ -52,13 +60,8 @@ private slots:
 
     qreal scaleFitWindow();
 
-
-
-    void on_actionPrevious_Image_triggered();
-
-    void on_actionNext_Image_triggered();
-
-    void on_actionLoad_triggered();
+    void enableFileActions();
+    void unableFileActions();
 
 private:
     Ui::MainWindow *ui;
@@ -70,6 +73,7 @@ private:
     FileManager fileManager;
 
     QLabel *mousePosLabel;
+    QComboBox *taskComboBox;
 
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();

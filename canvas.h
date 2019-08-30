@@ -2,6 +2,7 @@
 #define CANVAS_H
 
 #include "annotationcontainer.h"
+#include "segannotationitem.h"
 #include "labelmanager.h"
 #include <QWidget>
 #include <QRect>
@@ -10,10 +11,11 @@ enum TaskMode{
     DETECTION, SEGMENTATION, DETECTION3D, SEGMENTATION3D
 };
 enum CanvasMode{
-    DRAW, EDIT
+    DRAW, SELECT
 };
 enum DrawMode{
-    RECTANGLE
+    RECTANGLE, //! for detection
+    CONTOUR, SQUAREPEN, CIRCLEPEN, POLYGEN //! for segmentation
 };
 
 enum EditingRectEdge{
@@ -24,38 +26,36 @@ class Canvas : public QWidget
 {
     Q_OBJECT    
 public:
-    explicit Canvas(const LabelManager *pLabelManager, const AnnotationContainer *pRectAnno, QWidget *parent=nullptr);
+    explicit Canvas(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent=nullptr);
 
-    // these two functions are required by adjustSize()
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
-
-    qreal getScale() const;
     const QPixmap& getPixmap() const;
-    int selectShape(QPoint pos);
+    qreal getScale() const;
 
     void mouseMoveEvent(QMouseEvent* event);
     void mousePressEvent(QMouseEvent* event);
     void mouseReleaseEvent(QMouseEvent *event);
-//    void wheelEvent(QWheelEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 
-    QString modeString() const {
-        QString modeStr("");
-        if (task == DETECTION) modeStr+="Detection, ";
-        else if (task == SEGMENTATION) modeStr+="Segmentation, ";
+    //! for coord & zoom
+    // these two functions are required by adjustSize()
+    QSize sizeHint() const;
+    QSize minimumSizeHint() const;
 
-        if (mode == DRAW) modeStr+="Draw, ";
-        else if (mode == EDIT) modeStr+="Edit, ";
+    //! for bbox editing
+    int selectShape(QPoint pos);
 
-        if (drawMode == RECTANGLE) modeStr+="2D Rectangle";
-
-        return modeStr;
-    }
+    //! mode
+    QString modeString() const;
+    void changeTask(TaskMode _task);
 
 signals:
     void mouseMoved(QPoint pos);
     void zoomRequest(qreal delta, QPoint pos);
+
     void newRectangleAnnotated(QRect newRect);
+    void newStrokesAnnotated(const QList<SegStroke> &strokes);
+
     void modifySelectedRectRequest(int idx, QRect rect);
     void removeRectRequest(int idx);
     void modeChanged(QString mode);
@@ -64,37 +64,41 @@ public slots:
     void loadPixmap(QPixmap);
     void setScale(qreal);
     void paintEvent(QPaintEvent*);
-    void changeCanvasModeRequest(){
-        if (pRectAnno->getSelectedIdx()==-1)
-            mode = DRAW;
-        else {
-            mode = EDIT;
-        }
-        emit modeChanged(modeString());
-    }
+    void changeCanvasModeRequest();
 
 private:
     QPixmap pixmap;
+
+    QPoint mousePos;
+
+    //! mode
+    TaskMode task;
+    CanvasMode mode;
+    DrawMode drawMode;
+
+    //! related data
+    const AnnotationContainer *pAnnoContainer;
+    const LabelManager* pLabelManager;
+
+    //! for coord & zoom
+    qreal scale;
+    QPoint offsetToCenter();
 
     QPoint pixelPos(QPoint pos);
     QPoint boundedPixelPos(QPoint pos);
     bool outOfPixmap(QPoint pos);
 
-    qreal scale;
-    QPoint offsetToCenter();
-
-    TaskMode task;
-    CanvasMode mode;
-    DrawMode drawMode;
-
+    //! for bbox drawing
     QList<QPoint> curPoints;
-
-    const AnnotationContainer *pRectAnno;
-    const LabelManager* pLabelManager;
-
+    //! for bbox editing
     QRect editingRect;
     bool editing;
     EditingRectEdge editingRectEdge;
+
+    //! for seg drawing
+    bool strokeDrawing;
+    int curPenWidth;
+    QList<SegStroke> curStrokes;
 };
 
 #endif // CANVAS_H

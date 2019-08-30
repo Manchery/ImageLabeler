@@ -26,22 +26,36 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    canvas = new Canvas(&labelManager, &annoContainer, ui->scrollArea);
+    ui->scrollArea->setWidget(canvas);
+    //    ui->scrollArea->setWidgetResizable(true);
+    canvas->setEnabled(true);
 
-//    QComboBox *comboBox = new QComboBox(ui->mainToolBar);
-//    comboBox->addItem("Detection");
-//    comboBox->addItem("Segmentation");
-//    ui->mainToolBar->insertWidget(ui->actionOpen_File, comboBox);
+    connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
+
+    taskComboBox = new QComboBox(ui->mainToolBar);
+    taskComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    taskComboBox->addItem("Detection ");
+    taskComboBox->addItem("Segmentation ");
+    taskComboBox->addItem("3D Detection ");
+    taskComboBox->addItem("3D Segmentation ");
+    ui->mainToolBar->insertWidget(ui->actionOpen_File, taskComboBox);
+
+    canvas->changeTask(DETECTION);
+
+    connect(taskComboBox, &QComboBox::currentTextChanged, [this](QString text){
+        if (text == "Detection ") canvas->changeTask(DETECTION);
+        if (text == "Segmentation ") canvas->changeTask(SEGMENTATION);
+        if (text == "3D Detection ") canvas->changeTask(DETECTION3D);
+        if (text == "3D Segmentation ") canvas->changeTask(SEGMENTATION3D);
+    });
+
+    unableFileActions();
 
     mousePosLabel = new QLabel();
     ui->statusBar->addPermanentWidget(mousePosLabel);
 
-    canvas = new Canvas(&labelManager, &annoContainer, ui->scrollArea);
-    ui->scrollArea->setWidget(canvas);
-//    ui->scrollArea->setWidgetResizable(true);
 
-    canvas->setEnabled(true);
-
-    connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
 
     // label config
     // signal-slot from-to: ui->list => labelconfig => canvas
@@ -112,8 +126,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //! request from canvas
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
-    connect(canvas, &Canvas::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
+    connect(canvas, &Canvas::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
 
+    ///! only for bbox, not segmentation
+    connect(canvas, &Canvas::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
                 std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->label,
@@ -203,20 +219,38 @@ void MainWindow::getNewRect(QRect rect)
     QString curLabel = getCurrentLabel();
     if (curLabel==""){
         LabelDialog dialog(labelManager, this);
-        if(dialog.exec() == QDialog::Accepted) {
+        if (dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            std::shared_ptr<RectAnnotationItem> item =
-                    std::make_shared<RectAnnotationItem>(rect, newLabel,
-                                                         annoContainer.newInstanceIdForLabel(newLabel));
-            annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
+            curLabel = newLabel;
+        }else {
+            return;
         }
-    }else{
-        std::shared_ptr<RectAnnotationItem> item =
-                std::make_shared<RectAnnotationItem>(rect, curLabel,
-                                                     annoContainer.newInstanceIdForLabel(curLabel));
-        annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
     }
+
+    std::shared_ptr<RectAnnotationItem> item =
+            std::make_shared<RectAnnotationItem>(rect, curLabel,
+                                                 annoContainer.newInstanceIdForLabel(curLabel));
+    annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
+}
+
+void MainWindow::getNewStrokes(const QList<SegStroke> &strokes)
+{
+    QString curLabel = getCurrentLabel();
+    if (curLabel==""){
+        LabelDialog dialog(labelManager, this);
+        if (dialog.exec() == QDialog::Accepted) {
+            QString newLabel = dialog.getLabel();
+            newLabelRequest(newLabel);
+            curLabel = newLabel;
+        }else {
+            return;
+        }
+    }
+    std::shared_ptr<SegAnnotationItem> item =
+            std::make_shared<SegAnnotationItem>(strokes, curLabel,
+                                                 annoContainer.newInstanceIdForLabel(curLabel));
+    annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
 
 void MainWindow::newLabelRequest(QString newLabel)
@@ -310,10 +344,7 @@ void MainWindow::on_actionOpen_File_triggered()
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
 
-        ui->actionSave->setEnabled(true);
-        ui->actionSave_As->setEnabled(true);
-        ui->actionLoad->setEnabled(true);
-        ui->actionClose->setEnabled(true);
+        enableFileActions();
     }
 }
 
@@ -342,10 +373,7 @@ void MainWindow::on_actionOpen_Dir_triggered()
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
 
-        ui->actionSave->setEnabled(true);
-        ui->actionSave_As->setEnabled(true);
-        ui->actionLoad->setEnabled(true);
-        ui->actionClose->setEnabled(true);
+        enableFileActions();
     }
 }
 
@@ -400,10 +428,7 @@ void MainWindow::on_actionClose_triggered()
         annoContainer.allClear();
     }
     fileManager.close();
-    ui->actionSave->setEnabled(false);
-    ui->actionSave_As->setEnabled(false);
-    ui->actionLoad->setEnabled(false);
-    ui->actionClose->setEnabled(false);
+    unableFileActions();
 }
 
 
@@ -460,6 +485,24 @@ qreal MainWindow::scaleFitWindow()
     int h2 = canvas->getPixmap().height();
     qreal a2 = static_cast<qreal>(w2)/h2;
     return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
+}
+
+void MainWindow::enableFileActions()
+{
+    ui->actionSave->setEnabled(true);
+    ui->actionSave_As->setEnabled(true);
+    ui->actionLoad->setEnabled(true);
+    ui->actionClose->setEnabled(true);
+    taskComboBox->setEnabled(false);
+}
+
+void MainWindow::unableFileActions()
+{
+    ui->actionSave->setEnabled(false);
+    ui->actionSave_As->setEnabled(false);
+    ui->actionLoad->setEnabled(false);
+    ui->actionClose->setEnabled(false);
+    taskComboBox->setEnabled(true);
 }
 
 

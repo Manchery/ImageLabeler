@@ -1,5 +1,5 @@
-#ifndef RECTLABELDATA_H
-#define RECTLABELDATA_H
+#ifndef ANNOTATIONCONTAINER_H
+#define ANNOTATIONCONTAINER_H
 
 #include "annotationitem.h"
 #include "rectannotationitem.h"
@@ -84,4 +84,4 @@ private:
     void emitUndoRedoEnable();
 };
 
-#endif // RECTLABELDATA_H
+#endif // ANNOTATIONCONTAINER_H

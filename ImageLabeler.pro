@@ -36,6 +36,7 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         rectannotationitem.cpp \
+        segannotationitem.cpp \
         utils.cpp
 
 HEADERS += \
@@ -49,6 +50,7 @@ HEADERS += \
         labelmanager.h \
         mainwindow.h \
         rectannotationitem.h \
+        segannotationitem.h \
         utils.h
 
 FORMS += \
