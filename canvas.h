@@ -1,19 +1,18 @@
 #ifndef CANVAS_H
 #define CANVAS_H
 
-#include "rectannotations.h"
+#include "annotationcontainer.h"
 #include "labelmanager.h"
 #include <QWidget>
 #include <QRect>
 
 enum TaskMode{
-    DETECTION,SEGMENTATION
+    DETECTION, SEGMENTATION, DETECTION3D, SEGMENTATION3D
 };
-
 enum CanvasMode{
     DRAW, EDIT
 };
-enum CreateMode{
+enum DrawMode{
     RECTANGLE
 };
 
@@ -25,7 +24,7 @@ class Canvas : public QWidget
 {
     Q_OBJECT    
 public:
-    explicit Canvas(const LabelManager *pLabelManager, const RectAnnotations *pRectAnno, QWidget *parent=nullptr);
+    explicit Canvas(const LabelManager *pLabelManager, const AnnotationContainer *pRectAnno, QWidget *parent=nullptr);
 
     // these two functions are required by adjustSize()
     QSize sizeHint() const;
@@ -48,7 +47,7 @@ public:
         if (mode == DRAW) modeStr+="Draw, ";
         else if (mode == EDIT) modeStr+="Edit, ";
 
-        if (createMode == RECTANGLE) modeStr+="2D Rectangle";
+        if (drawMode == RECTANGLE) modeStr+="2D Rectangle";
 
         return modeStr;
     }
@@ -86,11 +85,11 @@ private:
 
     TaskMode task;
     CanvasMode mode;
-    CreateMode createMode;
+    DrawMode drawMode;
 
     QList<QPoint> curPoints;
 
-    const RectAnnotations *pRectAnno;
+    const AnnotationContainer *pRectAnno;
     const LabelManager* pLabelManager;
 
     QRect editingRect;

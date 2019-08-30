@@ -25,6 +25,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 CONFIG += c++14
 
 SOURCES += \
+        annotationcontainer.cpp \
+        annotationitem.cpp \
         canvas.cpp \
         filemanager.cpp \
         labeldialog.cpp \
@@ -33,10 +35,12 @@ SOURCES += \
         labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
-        rectannotations.cpp \
+        rectannotationitem.cpp \
         utils.cpp
 
 HEADERS += \
+        annotationcontainer.h \
+        annotationitem.h \
         canvas.h \
         filemanager.h \
         labeldialog.h \
@@ -44,7 +48,7 @@ HEADERS += \
         labellistwidget.h \
         labelmanager.h \
         mainwindow.h \
-        rectannotations.h \
+        rectannotationitem.h \
         utils.h
 
 FORMS += \

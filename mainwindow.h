@@ -65,7 +65,7 @@ private:
     Canvas *canvas;
 
     LabelManager labelManager;
-    RectAnnotations rectAnno;
+    AnnotationContainer annoContainer;
 
     FileManager fileManager;
 

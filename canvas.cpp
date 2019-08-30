@@ -5,7 +5,7 @@
 #include <QtDebug>
 #include <algorithm>
 
-Canvas::Canvas(const LabelManager *pLabelConfig, const RectAnnotations *pLabelData, QWidget *parent) :
+Canvas::Canvas(const LabelManager *pLabelConfig, const AnnotationContainer *pLabelData, QWidget *parent) :
     QWidget(parent),
     pixmap(), scale(1.0),
     pRectAnno(pLabelData),
@@ -15,7 +15,7 @@ Canvas::Canvas(const LabelManager *pLabelConfig, const RectAnnotations *pLabelDa
 {
     task = TaskMode::DETECTION;
     mode = CanvasMode::DRAW;
-    createMode = CreateMode::RECTANGLE;
+    drawMode = DrawMode::RECTANGLE;
 
     setMouseTracking(true);
 }
@@ -38,13 +38,17 @@ const QPixmap &Canvas::getPixmap() const { return pixmap; }
 
 int Canvas::selectShape(QPoint pos)
 {
-    for (int i=pRectAnno->length()-1;i>=0;i--){
-        QRect rect=(*pRectAnno)[i].rect;
-        // consider for really small bounding box
-        rect.setTopLeft(rect.topLeft()-QPoint(2,2));
-        rect.setBottomRight(rect.bottomRight()+QPoint(2,2));
-        if (rect.contains(pos))
-            return i;
+    if (task==DETECTION){
+        for (int i=pRectAnno->length()-1;i>=0;i--){
+            auto item = RectAnnotationItem::castPointer((*pRectAnno)[i]);
+            QRect rect=item->rect;
+            // consider for really small bounding box
+            rect.setTopLeft(rect.topLeft()-QPoint(2,2));
+            rect.setBottomRight(rect.bottomRight()+QPoint(2,2));
+            if (rect.contains(pos))
+                return i;
+        }
+        return -1;
     }
     return -1;
 }
@@ -79,7 +83,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
-            if (createMode == CreateMode::RECTANGLE){
+            if (drawMode == DrawMode::RECTANGLE){
                 if (event->button() == Qt::LeftButton){
                     if (curPoints.length()==0){
                         if (!outOfPixmap(pixPos)){
@@ -109,7 +113,8 @@ void Canvas::mousePressEvent(QMouseEvent *event)
             }
         } else if (mode == CanvasMode::EDIT){
             if (event->button() == Qt::LeftButton){
-                QRect selectedRect = (*pRectAnno)[pRectAnno->getSelectedIdx()].rect;
+                auto item = RectAnnotationItem::castPointer((*pRectAnno)[pRectAnno->getSelectedIdx()]);
+                QRect selectedRect = item->rect;
                 if (onRectTop(pixPos, selectedRect)){
                     editing=true; editingRect = selectedRect;
                     editingRectEdge = TOP;
@@ -138,7 +143,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
-            if (createMode == CreateMode::RECTANGLE){
+            if (drawMode == DrawMode::RECTANGLE){
                 if (curPoints.length()==2){
                     curPoints[1] = pixPos;
                     update();
@@ -216,8 +221,10 @@ void Canvas::paintEvent(QPaintEvent *event)
     if (task == DETECTION){
         if (mode == DRAW){
             for (int i=0;i<pRectAnno->length();i++){
-                QRect rect=(*pRectAnno)[i].rect;
-                QString label=(*pRectAnno)[i].label;
+                auto item = RectAnnotationItem::castPointer((*pRectAnno)[i]);
+                QRect rect=item->rect;
+                QString label=item->label;
+
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
@@ -245,8 +252,10 @@ void Canvas::paintEvent(QPaintEvent *event)
             for (int i=0;i<pRectAnno->length();i++){
                 if (i==pRectAnno->getSelectedIdx()) continue;
 
-                QRect rect=(*pRectAnno)[i].rect;
-                QString label=(*pRectAnno)[i].label;
+                auto item = RectAnnotationItem::castPointer((*pRectAnno)[i]);
+                QRect rect=item->rect;
+                QString label=item->label;
+
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
@@ -262,8 +271,8 @@ void Canvas::paintEvent(QPaintEvent *event)
                 }
             }
 
-            QString selectedLabel = pRectAnno->getSelectedItem().label;
-            QRect drawedRect = editing?editingRect:pRectAnno->getSelectedItem().rect;
+            QString selectedLabel = pRectAnno->getSelectedItem()->label;
+            QRect drawedRect = editing?editingRect:RectAnnotationItem::castPointer(pRectAnno->getSelectedItem())->rect;
             p.save();
             QColor color = (*pLabelManager)[selectedLabel].color;
             color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);

@@ -18,6 +18,7 @@
 #include <QJsonDocument>
 #include <QFile>
 #include <QFileInfo>
+#include <QComboBox>
 #include <cmath>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -26,10 +27,15 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+//    QComboBox *comboBox = new QComboBox(ui->mainToolBar);
+//    comboBox->addItem("Detection");
+//    comboBox->addItem("Segmentation");
+//    ui->mainToolBar->insertWidget(ui->actionOpen_File, comboBox);
+
     mousePosLabel = new QLabel();
     ui->statusBar->addPermanentWidget(mousePosLabel);
 
-    canvas = new Canvas(&labelManager, &rectAnno, ui->scrollArea);
+    canvas = new Canvas(&labelManager, &annoContainer, ui->scrollArea);
     ui->scrollArea->setWidget(canvas);
 //    ui->scrollArea->setWidgetResizable(true);
 
@@ -67,43 +73,58 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&labelManager, &LabelManager::allCleared,
             ui->labelListWidget, &QListWidget::clear);
 
+    //! maybe label give back
+    connect(&annoContainer, &AnnotationContainer::labelGiveBack, this, &MainWindow::newLabelRequest);
+
+    //! end label config
+
 
     // label data
     // signal-slot from-to: ui->action/canvas => labeldata => canvas
     ui->annoListWidget->setSortingEnabled(false);
     ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
+    //! select
     connect(ui->annoListWidget, &QListWidget::itemSelectionChanged, [this](){
         auto items = ui->annoListWidget->selectedItems();
         if (items.length()==0){
-            rectAnno.setSelected(-1);
+            annoContainer.setSelected(-1);
         }else{
-            rectAnno.setSelected(ui->annoListWidget->row(items[0]));
+            annoContainer.setSelected(ui->annoListWidget->row(items[0]));
         }
         canvas->changeCanvasModeRequest();
     });
 
+    //! right click menu
     ui->annoListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->annoListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideAnnoContextMenu);
 
+    //! undo & redo
     ui->actionUndo->setEnabled(false);
-    connect(&rectAnno, &RectAnnotations::UndoEnableChanged,
+    connect(&annoContainer, &AnnotationContainer::UndoEnableChanged,
             ui->actionUndo, &QAction::setEnabled);
-    connect(ui->actionUndo, &QAction::triggered, &rectAnno, &RectAnnotations::undo);
+    connect(ui->actionUndo, &QAction::triggered, &annoContainer, &AnnotationContainer::undo);
     ui->actionRedo->setEnabled(false);
-    connect(&rectAnno, &RectAnnotations::RedoEnableChanged,
+    connect(&annoContainer, &AnnotationContainer::RedoEnableChanged,
             ui->actionRedo, &QAction::setEnabled);
-    connect(ui->actionRedo, &QAction::triggered, &rectAnno, &RectAnnotations::redo);
+    connect(ui->actionRedo, &QAction::triggered, &annoContainer, &AnnotationContainer::redo);
 
+    //! request from canvas
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
-    connect(canvas, &Canvas::removeRectRequest, &rectAnno, &RectAnnotations::remove);
+    connect(canvas, &Canvas::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
+
     connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
-        rectAnno.modify(idx, RectAnnotationItem(rect, rectAnno.getSelectedItem().label,
-                                                rectAnno.getSelectedItem().id));
+        std::shared_ptr<RectAnnotationItem> item =
+                std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->label,
+                                                     annoContainer.getSelectedItem()->id);
+        annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
+    //! to repaint canvas
+    connect(&annoContainer, &AnnotationContainer::dataChanged, canvas, qOverload<>(&QWidget::update));
 
+    //! to change ui->annolist
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
         for (int i=0;i<ui->annoListWidget->count();i++){
             auto item = ui->annoListWidget->item(i);
@@ -111,31 +132,28 @@ MainWindow::MainWindow(QWidget *parent) :
                 ui->annoListWidget->changeIconColorByIdx(i, color);
         }
     });
-
-    connect(&rectAnno, &RectAnnotations::labelGiveBack, this, &MainWindow::newLabelRequest);
-    connect(&rectAnno, &RectAnnotations::dataChanged, canvas, qOverload<>(&QWidget::update));
-
-    connect(&rectAnno, &RectAnnotations::AnnotationAdded,[this](RectAnnotationItem item){
-        ui->annoListWidget->addCustomItemUncheckable(item.toStr(), labelManager.getColor(item.label));
+    connect(&annoContainer, &AnnotationContainer::AnnotationAdded,[this](const AnnoItemPtr &item){
+        ui->annoListWidget->addCustomItemUncheckable(item->toStr(), labelManager.getColor(item->label));
     });
-    connect(&rectAnno, &RectAnnotations::AnnotationInserted,[this](RectAnnotationItem item, int idx){
-        ui->annoListWidget->insertCustomItemUncheckable(item.toStr(), labelManager.getColor(item.label),idx);
+    connect(&annoContainer, &AnnotationContainer::AnnotationInserted,[this](const AnnoItemPtr &item, int idx){
+        ui->annoListWidget->insertCustomItemUncheckable(item->toStr(), labelManager.getColor(item->label),idx);
     });
-    connect(&rectAnno, &RectAnnotations::AnnotationModified,[this](RectAnnotationItem item, int idx){
-        ui->annoListWidget->changeTextByIdx(idx, item.toStr());
+    connect(&annoContainer, &AnnotationContainer::AnnotationModified,[this](const AnnoItemPtr &item, int idx){
+        ui->annoListWidget->changeTextByIdx(idx, item->toStr());
     });
-    connect(&rectAnno, &RectAnnotations::AnnotationRemoved,[this](int idx){
+    connect(&annoContainer, &AnnotationContainer::AnnotationRemoved,[this](int idx){
         ui->annoListWidget->removeCustomItemByIdx(idx);
     });
-    connect(&rectAnno, &RectAnnotations::allCleared,
+    connect(&annoContainer, &AnnotationContainer::allCleared,
             ui->annoListWidget, &QListWidget::clear);
-    // end label data
+
+    //! end label data
 
     // file
     ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
-    connect(&rectAnno, &RectAnnotations::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
+    connect(&annoContainer, &AnnotationContainer::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
 
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
@@ -188,12 +206,16 @@ void MainWindow::getNewRect(QRect rect)
         if(dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            rectAnno.push_back(RectAnnotationItem(rect, newLabel,
-                                                  rectAnno.newInstanceIdForLabel(newLabel)));
+            std::shared_ptr<RectAnnotationItem> item =
+                    std::make_shared<RectAnnotationItem>(rect, newLabel,
+                                                         annoContainer.newInstanceIdForLabel(newLabel));
+            annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
         }
     }else{
-        rectAnno.push_back(RectAnnotationItem(rect, curLabel,
-                                              rectAnno.newInstanceIdForLabel(curLabel)));
+        std::shared_ptr<RectAnnotationItem> item =
+                std::make_shared<RectAnnotationItem>(rect, curLabel,
+                                                     annoContainer.newInstanceIdForLabel(curLabel));
+        annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
     }
 }
 
@@ -208,7 +230,7 @@ void MainWindow::newLabelRequest(QString newLabel)
 
 void MainWindow::removeLabelRequest(QString label)
 {
-    if (rectAnno.hasData(label)){
+    if (annoContainer.hasData(label)){
         QMessageBox::warning(this, "Warning", "This label has existing data! Please remove them first.");
     }else{
         labelManager.removeLabel(label);
@@ -252,7 +274,7 @@ void MainWindow::provideAnnoContextMenu(const QPoint &pos)
     QAction* rightClickItem = submenu.exec(globalPos);
     if (rightClickItem){
         if (rightClickItem->text().contains("Delete")){
-            rectAnno.remove(row);
+            annoContainer.remove(row);
         }
     }
 }
@@ -281,7 +303,7 @@ void MainWindow::on_actionOpen_File_triggered()
         adjustFitWindow();
 
         labelManager.allClear();
-        rectAnno.allClear();
+        annoContainer.allClear();
 
         fileManager.setAll(fileName, "json");
 
@@ -312,7 +334,7 @@ void MainWindow::on_actionOpen_Dir_triggered()
         adjustFitWindow();
 
         labelManager.allClear();
-        rectAnno.allClear();
+        annoContainer.allClear();
 
         fileManager.setAll(images, "json");
 
@@ -342,7 +364,7 @@ bool MainWindow::switchFile(int idx)
 
     //! TODO: whether clear
     labelManager.allClear();
-    rectAnno.allClear();
+    annoContainer.allClear();
 
     fileManager.selectFile(idx);
     _loadJsonFile(fileManager.getLabelFile());
@@ -375,7 +397,7 @@ void MainWindow::on_actionClose_triggered()
     if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
         canvas->loadPixmap(QPixmap());
         labelManager.allClear();
-        rectAnno.allClear();
+        annoContainer.allClear();
     }
     fileManager.close();
     ui->actionSave->setEnabled(false);
@@ -390,7 +412,7 @@ void MainWindow::on_actionSave_triggered()
     if (fileManager.getMode() == SingleImage){
         QJsonObject json;
         json.insert("labels", labelManager.toJsonArray());
-        json.insert("annotations", rectAnno.toJsonArray());
+        json.insert("annotations", annoContainer.toJsonArray());
         FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
         fileManager.resetChangeNotSaved();
@@ -400,7 +422,7 @@ void MainWindow::on_actionSave_triggered()
         FileManager::saveJson(labelJson, fileManager.getLabelFile());
 
         QJsonObject annoJson;
-        annoJson.insert("annotations", rectAnno.toJsonArray());
+        annoJson.insert("annotations", annoContainer.toJsonArray());
         FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
 
         fileManager.resetChangeNotSaved();
@@ -415,7 +437,7 @@ void MainWindow::on_actionSave_As_triggered()
         fileName+=".json";
     QJsonObject json;
     json.insert("labels", labelManager.toJsonArray());
-    json.insert("annotations", rectAnno.toJsonArray());
+    json.insert("annotations", annoContainer.toJsonArray());
     FileManager::saveJson(json, fileName);
 }
 
@@ -482,7 +504,7 @@ void MainWindow::_loadJsonFile(QString fileName)
     if (checkFile.exists() && checkFile.isFile()){
         QJsonObject json = FileManager::readJson(fileName);
         labelManager.fromJsonObject(json);
-        rectAnno.fromJsonObject(json);
+        annoContainer.fromJsonObject(json, "Rect2D");
     }
 }
 
