@@ -1,4 +1,5 @@
 #include "segannotationitem.h"
+#include "annotationcontainer.h"
 
 SegStroke::SegStroke(): type(),penWidth(-1), points() { }
 
@@ -127,3 +128,35 @@ void SegAnnotationItem::fromJsonObject(const QJsonObject &json){
     }
 }
 
+QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager)
+{
+    QImage image(size, QImage::Format_RGB32);
+    image.fill(QColor(0,0,0));
+    QPainter p(&image);
+    for (int i=0;i<pAnnoContainer->length();i++){
+        auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
+        QString label = item->label;
+        QColor color = (*pLabelManager)[label].color;
+        for (auto stroke: item->strokes)
+            stroke.drawSelf(p,color);
+    }
+    p.end();
+    return image;
+}
+
+QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager)
+{
+    QImage image(size, QImage::Format_Grayscale8);
+    image.fill(QColor(0,0,0));
+    QPainter p(&image);
+    for (int i=0;i<pAnnoContainer->length();i++){
+        auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
+        QString label = item->label;
+        int labelId = (*pLabelManager)[label].id;
+        QColor color = QColor(labelId, labelId, labelId);
+        for (auto stroke: item->strokes)
+            stroke.drawSelf(p,color);
+    }
+    p.end();
+    return image;
+}

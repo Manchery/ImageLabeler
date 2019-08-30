@@ -31,6 +31,8 @@ public:
     const QPixmap& getPixmap() const;
     qreal getScale() const;
     TaskMode getTaskMode() const { return task; }
+    CanvasMode getCanvasMode() const { return mode; }
+    DrawMode getDrawMode() const { return drawMode; }
     int getLastPenWidth() const  { return lastPenWidth; }
 
     void mouseMoveEvent(QMouseEvent* event);

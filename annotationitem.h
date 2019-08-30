@@ -1,8 +1,11 @@
 #ifndef ANNOTATIONITEM_H
 #define ANNOTATIONITEM_H
 
+#include "labelmanager.h"
 #include <QString>
 #include <QJsonObject>
+#include <QSize>
+#include <QList>
 
 class AnnotationItem
 {

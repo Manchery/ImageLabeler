@@ -3,7 +3,7 @@
 
 LabelManager::LabelManager(QObject *parent) : QObject(parent)
 {
-    currentId=-1;
+    currentId=0;
 }
 
 LabelProperty LabelManager::operator[](QString label) const {

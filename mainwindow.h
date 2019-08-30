@@ -24,6 +24,9 @@ public:
     ~MainWindow();
     QString getCurrentLabel();
 
+    void keyPressEvent(QKeyEvent *event);
+
+
 public slots:
     void reportMouseMoved(QPoint pos);
     void reportCanvasMode(QString mode);
@@ -83,6 +86,7 @@ private:
 
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();
+    void _saveSegmentImageResults(QString oldSuffix);
 
 };
 

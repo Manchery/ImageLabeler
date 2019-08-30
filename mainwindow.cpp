@@ -386,13 +386,22 @@ QString MainWindow::getCurrentLabel()
     }
 }
 
+void MainWindow::keyPressEvent(QKeyEvent *event){
+    if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter)
+        if (canvas->getTaskMode()==SEGMENTATION && canvas->getCanvasMode()==DRAW){
+            canvas->keyPressEvent(event);
+            return;
+        }
+    QMainWindow::keyPressEvent(event);
+}
+
 void MainWindow::on_actionOpen_File_triggered()
 {
     on_actionClose_triggered();
     if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
 
     QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
-                                                     "Image Files (*.jpg *.png);;JPEG Files (*.jpg);;PNG Files (*.png)");
+                                                    "Image Files (*.jpg *.png);;JPEG Files (*.jpg);;PNG Files (*.png)");
     if (!fileName.isNull() && !fileName.isEmpty()){
         canvas->loadPixmap(fileName);
         adjustFitWindow();
@@ -400,9 +409,9 @@ void MainWindow::on_actionOpen_File_triggered()
         labelManager.allClear();
         annoContainer.allClear();
 
-        if (taskComboBox->currentText()=="Detection "){
+        if (canvas->getTaskMode()==DETECTION){
             fileManager.setAll(fileName, "_detect_labels_annotations.json");
-        }else if (taskComboBox->currentText()=="Segmentation "){
+        }else if (canvas->getTaskMode()==SEGMENTATION){
             fileManager.setAll(fileName, "_segment_labels_annotations.json");
         }
 
@@ -423,8 +432,12 @@ void MainWindow::on_actionOpen_Dir_triggered()
         QDir dir(dirName);
         QStringList images = dir.entryList(QStringList() << "*.jpg" << "*.png", QDir::Files);
         if (!dirName.endsWith('/')) dirName+="/";
-        for (auto &image: images)
-            image = dirName+image;
+        QStringList tmp;
+        for (auto &image: images){
+            if (!image.endsWith("_segment_color.png") && !image.endsWith("_segment_labelId.png"))
+                tmp.push_back(dirName+image);
+        }
+        images = tmp;
 
         canvas->loadPixmap(images[0]);
         adjustFitWindow();
@@ -432,14 +445,14 @@ void MainWindow::on_actionOpen_Dir_triggered()
         labelManager.allClear();
         annoContainer.allClear();
 
-        if (taskComboBox->currentText()=="Detection "){
+        if (canvas->getTaskMode()==DETECTION){
             fileManager.setAll(images, "_detect_annotations.json");
-        }else if (taskComboBox->currentText()=="Segmentation "){
+        }else if (canvas->getTaskMode()==SEGMENTATION){
             fileManager.setAll(images, "_segment_annotations.json");
-        }else if (taskComboBox->currentText()=="3D Detection "){
+        }else if (canvas->getTaskMode()==DETECTION3D){
             //! TODO
-        }else if (taskComboBox->currentText()=="3D Segmentation "){
-
+        }else if (canvas->getTaskMode()==SEGMENTATION3D){
+            //! TODO
         }
 
         _loadJsonFile(fileManager.getLabelFile());
@@ -505,25 +518,43 @@ void MainWindow::on_actionClose_triggered()
 }
 
 
+void MainWindow::_saveSegmentImageResults(QString oldSuffix)
+{
+    QImage colorImage = drawColorImage(canvas->getPixmap().size(), &annoContainer, &labelManager);
+    QString colorImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "color.png");
+    colorImage.save(colorImagePath);
+    QImage labelIdImage = drawLabelIdImage(canvas->getPixmap().size(), &annoContainer, &labelManager);
+    QString labelIdImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "labelId.png");
+    labelIdImage.save(labelIdImagePath);
+}
+
 void MainWindow::on_actionSave_triggered()
 {
-    if (fileManager.getMode() == SingleImage){
-        QJsonObject json;
-        json.insert("labels", labelManager.toJsonArray());
-        json.insert("annotations", annoContainer.toJsonArray());
-        FileManager::saveJson(json, fileManager.getCurrentOutputFile());
+    if (canvas->getTaskMode()==DETECTION || canvas->getTaskMode()==SEGMENTATION){
+        if (fileManager.getMode()==SingleImage){
+            QJsonObject json;
+            json.insert("labels", labelManager.toJsonArray());
+            json.insert("annotations", annoContainer.toJsonArray());
+            FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
-        fileManager.resetChangeNotSaved();
-    } else if (fileManager.getMode() == MultiImage){
-        QJsonObject labelJson;
-        labelJson.insert("labels", labelManager.toJsonArray());
-        FileManager::saveJson(labelJson, fileManager.getLabelFile());
+            if (canvas->getTaskMode()==SEGMENTATION)
+                _saveSegmentImageResults("labels_annotations.json");
 
-        QJsonObject annoJson;
-        annoJson.insert("annotations", annoContainer.toJsonArray());
-        FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
+            fileManager.resetChangeNotSaved();
+        }else if (fileManager.getMode()==MultiImage){
+            QJsonObject labelJson;
+            labelJson.insert("labels", labelManager.toJsonArray());
+            FileManager::saveJson(labelJson, fileManager.getLabelFile());
 
-        fileManager.resetChangeNotSaved();
+            QJsonObject annoJson;
+            annoJson.insert("annotations", annoContainer.toJsonArray());
+            FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
+
+            if (canvas->getTaskMode()==SEGMENTATION)
+                _saveSegmentImageResults("annotations.json");
+
+            fileManager.resetChangeNotSaved();
+        }
     }
 }
 

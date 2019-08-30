@@ -35,4 +35,9 @@ public:
     void fromJsonObject(const QJsonObject &json);
 };
 
+class AnnotationContainer;
+extern QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager);
+extern QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager);
+
+
 #endif // SEGANNOTATIONITEM_H

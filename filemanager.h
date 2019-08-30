@@ -14,6 +14,8 @@ class FileManager : public QObject
     Q_OBJECT
 public:
     static QString changeExtensionName(QString fileName, QString newExtension);
+    static QString changeFileSuffix(QString fileName, QString oldSuffix, QString newSuffix);
+
     static QString getDir(QString fileName);
     static QString getName(QString fileName);
     static void saveJson(QJsonObject json, QString fileName);
