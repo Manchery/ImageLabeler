@@ -3,7 +3,7 @@
 
 LabelManager::LabelManager(QObject *parent) : QObject(parent)
 {
-    currentId=0;
+    currentMaxId=0;
 }
 
 LabelProperty LabelManager::operator[](QString label) const {
@@ -43,7 +43,7 @@ void LabelManager::fromJsonArray(QJsonArray json)
         if (value.isObject()){
             LabelProperty item;
             item.fromJsonObject(value.toObject());
-            addLabel(item.label, item.color, item.visible);
+            addLabel(item.label, item.color, item.visible, item.id);
         }
     }
 }
@@ -62,9 +62,10 @@ void LabelManager::fromJsonObject(QJsonObject json)
     }
 }
 
-void LabelManager::addLabel(QString label, QColor color, bool visible){
-    labels[label] = LabelProperty(label, color, visible, newLabelId());
-    emit labelAdded(label, color, visible, currentId);
+void LabelManager::addLabel(QString label, QColor color, bool visible,int id){
+    if (id==-1) id=++currentMaxId; else currentMaxId = std::max(id, currentMaxId);
+    labels[label] = LabelProperty(label, color, visible, id);
+    emit labelAdded(label, color, visible, id);
     emit configChanged();
 }
 
@@ -95,7 +96,7 @@ void LabelManager::setVisible(QString label, bool visible){
 void LabelManager::allClear()
 {
     labels.clear();
-    currentId=-1;
+    currentMaxId=0;
     emit allCleared();
 //    emit configChanged();
 }

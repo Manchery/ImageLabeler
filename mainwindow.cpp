@@ -248,6 +248,8 @@ void MainWindow::taskModeChanged()
 
     if (text.startsWith("3D")){
         ui->actionOpen_File->setEnabled(false);
+    }else{
+        ui->actionOpen_File->setEnabled(true);
     }
 }
 

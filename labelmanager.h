@@ -45,7 +45,7 @@ signals:
     void colorChanged(QString label, QColor color);
     void allCleared();
 public slots:
-    void addLabel(QString label, QColor color, bool visible);
+    void addLabel(QString label, QColor color, bool visible, int id=-1);
     void removeLabel(QString label);
     void setColor(QString label, QColor color);
     void setVisible(QString label, bool visible);
@@ -55,8 +55,7 @@ private:
     QMap<QString, LabelProperty> labels;
     void checkLabel(QString label) const;
 
-    int currentId;
-    int newLabelId() { return ++currentId; }
+    int currentMaxId;
 };
 
 #endif // LABELMANAGER_H
