@@ -371,6 +371,9 @@ void Canvas::keyPressEvent(QKeyEvent *event)
     if (task == SEGMENTATION){
         if (mode == DRAW){
             if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter){
+                if (drawMode==POLYGEN){
+                    strokeDrawing=false;
+                }
                 if (curStrokes.length()>0){
                     emit newStrokesAnnotated(curStrokes);
                     curStrokes.clear();

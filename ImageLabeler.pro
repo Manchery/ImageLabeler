@@ -28,6 +28,8 @@ SOURCES += \
         annotationcontainer.cpp \
         annotationitem.cpp \
         canvas.cpp \
+        canvas2d.cpp \
+        canvas3d.cpp \
         filemanager.cpp \
         labeldialog.cpp \
         labellineedit.cpp \
@@ -35,6 +37,7 @@ SOURCES += \
         labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
+        mainwindowtest.cpp \
         rectannotationitem.cpp \
         segannotationitem.cpp \
         utils.cpp
@@ -43,19 +46,23 @@ HEADERS += \
         annotationcontainer.h \
         annotationitem.h \
         canvas.h \
+        canvas2d.h \
+        canvas3d.h \
         filemanager.h \
         labeldialog.h \
         labellineedit.h \
         labellistwidget.h \
         labelmanager.h \
         mainwindow.h \
+        mainwindowtest.h \
         rectannotationitem.h \
         segannotationitem.h \
         utils.h
 
 FORMS += \
         labeldialog.ui \
-        mainwindow.ui
+        mainwindow.ui \
+        mainwindowtest.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
