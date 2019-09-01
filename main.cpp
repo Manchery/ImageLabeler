@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
     qsrand(static_cast<uint>(time(nullptr)));
 
     QApplication a(argc, argv);
-//    MainWindow w;
-    MainWindowTest w;
+    MainWindow w;
+//    MainWindowTest w;
     w.show();
     try {
         return a.exec();

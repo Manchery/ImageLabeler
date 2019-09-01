@@ -7,7 +7,7 @@ MainWindowTest::MainWindowTest(QWidget *parent) :
     ui(new Ui::MainWindowTest)
 {
     ui->setupUi(this);
-    Canvas3D *canvas = new Canvas3D();
+    Canvas3D *canvas = new Canvas3D(nullptr, nullptr);
     ui->scrollArea->setWidget(canvas);
 
     connect(canvas, &Canvas3D::mouse3DMoved, [this](int x,int y,int z){

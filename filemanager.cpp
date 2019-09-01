@@ -146,6 +146,19 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
     emit fileListSetup();
 }
 
+void FileManager::setAllDetection3D(QStringList fileNames, QString outputExtension)
+{
+    imageFiles.clear(); outputFiles.clear();
+    changeNotSaved=false;
+    mode = ThirdDImage;
+    curIdx = 0;
+    fileNames.sort();
+    imageFiles = fileNames;
+    outputFiles << getDir(fileNames[0])+outputExtension;
+    emitPrevNextEnable();
+    emit fileListSetup();
+}
+
 void FileManager::setChangeNotSaved() { changeNotSaved=true; }
 
 void FileManager::resetChangeNotSaved(){ changeNotSaved=false; }

@@ -28,8 +28,14 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     canvas = new Canvas(&labelManager, &annoContainer, ui->scrollArea);
+    canvas->setVisible(true);
+
+    canvas3d = new Canvas3D(&labelManager, &annoContainer, ui->scrollArea);
+    canvas3d->setVisible(false);
+
+    ui->scrollArea->setAlignment(Qt::AlignCenter);
     ui->scrollArea->setWidget(canvas);
-    //    ui->scrollArea->setWidgetResizable(true);
+//    ui->scrollArea->setWidgetResizable(true);
     canvas->setEnabled(true);
 
     connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
@@ -220,16 +226,33 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->lineEdit_addLabel->setText("");
     });
     // end labeldialog
+
 }
 
 void MainWindow::taskModeChanged()
 {
     QString text = taskComboBox->currentText();
 
+    if (text.startsWith("3D")){
+        ui->actionOpen_File->setEnabled(false);
+        canvas->setVisible(false);
+        canvas3d->setVisible(true);
+
+        ui->scrollArea->takeWidget();
+        ui->scrollArea->setWidget(canvas3d);
+    }else{
+        ui->actionOpen_File->setEnabled(true);
+        canvas->setVisible(true);
+        canvas3d->setVisible(false);
+
+        ui->scrollArea->takeWidget();
+        ui->scrollArea->setWidget(canvas);
+    }
+
     if (text == "Detection ") canvas->changeTask(DETECTION);
     if (text == "Segmentation ") canvas->changeTask(SEGMENTATION);
-    if (text == "3D Detection ") canvas->changeTask(DETECTION3D);
-    if (text == "3D Segmentation ") canvas->changeTask(SEGMENTATION3D);
+    if (text == "3D Detection ") canvas3d->changeTask(DETECTION3D);
+    if (text == "3D Segmentation ") canvas3d->changeTask(SEGMENTATION3D);
 
     if (text == "Detection " || text == "3D Detection "){
         drawComboBox->clear();
@@ -245,23 +268,25 @@ void MainWindow::taskModeChanged()
         penWidthBox->setEnabled(true);
         ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
     }
-
-    if (text.startsWith("3D")){
-        ui->actionOpen_File->setEnabled(false);
-    }else{
-        ui->actionOpen_File->setEnabled(true);
-    }
 }
 
 void MainWindow::drawModeChanged()
 {
     QString text = drawComboBox->currentText();
 
-    if (text=="Rectangle") canvas->changeDrawMode(RECTANGLE);
-    if (text=="Circle Pen") canvas->changeDrawMode(CIRCLEPEN);
-    if (text=="Square Pen") canvas->changeDrawMode(SQUAREPEN);
-    if (text=="Contour") canvas->changeDrawMode(CONTOUR);
-    if (text=="Polygonal Contour") canvas->changeDrawMode(POLYGEN);
+    if (!taskComboBox->currentText().startsWith("3D")){
+        if (text=="Rectangle") canvas->changeDrawMode(RECTANGLE);
+        if (text=="Circle Pen") canvas->changeDrawMode(CIRCLEPEN);
+        if (text=="Square Pen") canvas->changeDrawMode(SQUAREPEN);
+        if (text=="Contour") canvas->changeDrawMode(CONTOUR);
+        if (text=="Polygonal Contour") canvas->changeDrawMode(POLYGEN);
+    }else{
+        if (text=="Rectangle") canvas3d->changeDrawMode(RECTANGLE);
+        if (text=="Circle Pen") canvas3d->changeDrawMode(CIRCLEPEN);
+        if (text=="Square Pen") canvas3d->changeDrawMode(SQUAREPEN);
+        if (text=="Contour") canvas3d->changeDrawMode(CONTOUR);
+        if (text=="Polygonal Contour") canvas3d->changeDrawMode(POLYGEN);
+    }
 
     if (text=="Rectangle"||text=="Contour"||text=="Polygonal Contour"){
         penWidthBox->setEnabled(false);
@@ -433,6 +458,7 @@ void MainWindow::on_actionOpen_Dir_triggered()
     if (!dirName.isNull() && !dirName.isEmpty()){
         QDir dir(dirName);
         QStringList images = dir.entryList(QStringList() << "*.jpg" << "*.png", QDir::Files);
+        images.sort();
         if (!dirName.endsWith('/')) dirName+="/";
         QStringList tmp;
         for (auto &image: images){
@@ -441,19 +467,24 @@ void MainWindow::on_actionOpen_Dir_triggered()
         }
         images = tmp;
 
-        canvas->loadPixmap(images[0]);
-        adjustFitWindow();
-
         labelManager.allClear();
         annoContainer.allClear();
 
-        if (canvas->getTaskMode()==DETECTION){
+        if (taskComboBox->currentText()=="Detection "){
+            canvas->loadPixmap(images[0]);
+            adjustFitWindow();
             fileManager.setAll(images, "_detect_annotations.json");
-        }else if (canvas->getTaskMode()==SEGMENTATION){
+
+        }else if (taskComboBox->currentText()=="Segmentation "){
+            canvas->loadPixmap(images[0]);
+            adjustFitWindow();
             fileManager.setAll(images, "_segment_annotations.json");
-        }else if (canvas->getTaskMode()==DETECTION3D){
-            //! TODO
-        }else if (canvas->getTaskMode()==SEGMENTATION3D){
+
+        }else if (taskComboBox->currentText()=="3D Detection "){
+            fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
+            canvas3d->loadImagesZ(images);
+
+        }else if (taskComboBox->currentText()=="3D Segmentation "){
             //! TODO
         }
 

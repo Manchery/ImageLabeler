@@ -28,8 +28,8 @@ SOURCES += \
         annotationcontainer.cpp \
         annotationitem.cpp \
         canvas.cpp \
-        canvas2d.cpp \
         canvas3d.cpp \
+        childcanvas3d.cpp \
         filemanager.cpp \
         labeldialog.cpp \
         labellineedit.cpp \
@@ -46,8 +46,8 @@ HEADERS += \
         annotationcontainer.h \
         annotationitem.h \
         canvas.h \
-        canvas2d.h \
         canvas3d.h \
+        childcanvas3d.h \
         filemanager.h \
         labeldialog.h \
         labellineedit.h \

@@ -5,22 +5,22 @@
 #include <QPixmap>
 #include <QImage>
 
-class Canvas2D : public QWidget
+class ChildCanvas3D : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Canvas2D(QWidget *parent = nullptr);
+    explicit ChildCanvas3D(QWidget *parent = nullptr);
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
 
-    QSize size() const { return image.size(); }
-    int height() const { return image.height(); }
-    int width() const { return image.width(); }
+    QSize getImageSize() const { return image.size(); }
+    int getImageHeight() const { return image.height(); }
+    int getImageWidth() const { return image.width(); }
 
-//    void loadPixmap(QPixmap);
     void loadImage(const QImage &newImage);
 
     bool outOfPixmap(QPoint pos);
+    void setScale(qreal new_scale);
 signals:
     void mouseMoved(QPoint pos);
 
@@ -30,12 +30,14 @@ public slots:
     void mouseSetRequest(QPoint pos);
 
 private:
-//    QPixmap pixmap;
+
+    qreal scale;
     QImage image;
 
     QPoint mousePos;
 
 
+    QPoint pixelPos(QPoint pos);
     QPoint boundedPixelPos(QPoint pos);
 };
 

@@ -7,11 +7,11 @@
 #include <QtDebug>
 #include <algorithm>
 
-Canvas::Canvas(const LabelManager *pLabelConfig, const AnnotationContainer *pLabelData, QWidget *parent) :
+Canvas::Canvas(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
     QWidget(parent),
     pixmap(),
-    pAnnoContainer(pLabelData),
-    pLabelManager(pLabelConfig),
+    pAnnoContainer(pAnnoContainer),
+    pLabelManager(pLabelManager),
     scale(1.0)
 {
     lastPenWidth=DEFAULT_PEN_WIDTH;

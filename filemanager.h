@@ -35,8 +35,9 @@ public:
     void close();
 
     int count();
-    void setAll(QString fileName, QString outputExtension = "json");
-    void setAll(QStringList fileNames, QString outputExtension = "json");
+    void setAll(QString fileName, QString outputExtension);
+    void setAll(QStringList fileNames, QString outputExtension);
+    void setAllDetection3D(QStringList fileNames, QString outputExtension);
 
 signals:
     void prevEnableChanged(bool);
