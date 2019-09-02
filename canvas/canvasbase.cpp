@@ -14,7 +14,9 @@ QString CanvasBase::modeString() const{
     switch(task){
     case DETECTION:  modeStr+="Detection"; break;
     case SEGMENTATION: modeStr+="Segmentation"; break;
-    default: modeStr+="Unknown task"; break;
+    case DETECTION3D: modeStr+="Detection 3D"; break;
+    case SEGMENTATION3D: modeStr+="Segmentation 3D"; break;
+//    default: modeStr+="Unknown task"; break;
     }
 
     switch (mode) {
@@ -26,7 +28,7 @@ QString CanvasBase::modeString() const{
 
     if (mode==DRAW){
         switch (drawMode) {
-        case RECTANGLE: modeStr+=", Rectangle"; break;
+        case RECTANGLE: modeStr+= task==DETECTION3D?", Cuboid":", Rectangle" ; break;
         case CONTOUR: modeStr+=", Contour"; break;
         case SQUAREPEN: modeStr+=", Square Pen"; break;
         case CIRCLEPEN: modeStr+=", Circle Pen"; break;

@@ -7,7 +7,7 @@
 #include <QtDebug>
 #include <algorithm>
 
-Canvas2d::Canvas2d(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
+Canvas2D::Canvas2D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
     CanvasBase (pLabelManager, pAnnoContainer, parent),
     pixmap()
 {
@@ -16,7 +16,7 @@ Canvas2d::Canvas2d(const LabelManager *pLabelManager, const AnnotationContainer 
     setMouseTracking(true);
 }
 
-void Canvas2d::paintEvent(QPaintEvent *event)
+void Canvas2D::paintEvent(QPaintEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::paintEvent(event);
@@ -158,7 +158,7 @@ void Canvas2d::paintEvent(QPaintEvent *event)
     }
 }
 
-void Canvas2d::mousePressEvent(QMouseEvent *event)
+void Canvas2D::mousePressEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mousePressEvent(event);
@@ -266,7 +266,7 @@ void Canvas2d::mousePressEvent(QMouseEvent *event)
     setFocus();
 }
 
-void Canvas2d::mouseMoveEvent(QMouseEvent *event)
+void Canvas2D::mouseMoveEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mouseMoveEvent(event);
@@ -324,7 +324,7 @@ void Canvas2d::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void Canvas2d::mouseReleaseEvent(QMouseEvent *event){
+void Canvas2D::mouseReleaseEvent(QMouseEvent *event){
     if (pixmap.isNull()){
         QWidget::mouseReleaseEvent(event);
         return;
@@ -347,7 +347,7 @@ void Canvas2d::mouseReleaseEvent(QMouseEvent *event){
     }
 }
 
-void Canvas2d::mouseDoubleClickEvent(QMouseEvent *event)
+void Canvas2D::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mouseDoubleClickEvent(event);
@@ -363,7 +363,7 @@ void Canvas2d::mouseDoubleClickEvent(QMouseEvent *event)
         }
 }
 
-void Canvas2d::keyPressEvent(QKeyEvent *event)
+void Canvas2D::keyPressEvent(QKeyEvent *event)
 {
     if (task == SEGMENTATION){
         if (mode == DRAW){
@@ -383,7 +383,7 @@ void Canvas2d::keyPressEvent(QKeyEvent *event)
     QWidget::keyPressEvent(event);
 }
 
-void Canvas2d::changeTask(TaskMode _task) {
+void Canvas2D::changeTask(TaskMode _task) {
     if (task == _task) return;
     task = _task;
     switch(task){
@@ -395,9 +395,9 @@ void Canvas2d::changeTask(TaskMode _task) {
         break;
     case SEGMENTATION:
         mode = CanvasMode::DRAW;
-        drawMode = DrawMode::POLYGEN;
+        drawMode = DrawMode::CIRCLEPEN;
         editing = false;
-        curPenWidth=1;
+        curPenWidth=lastPenWidth;
         strokeDrawing=false;
         break;
     default:
@@ -406,7 +406,7 @@ void Canvas2d::changeTask(TaskMode _task) {
     emit modeChanged(modeString());
 }
 
-void Canvas2d::changeCanvasMode(CanvasMode _mode)
+void Canvas2D::changeCanvasMode(CanvasMode _mode)
 {
     if (mode == _mode) return;
     if (_mode == MOVE)
@@ -415,7 +415,7 @@ void Canvas2d::changeCanvasMode(CanvasMode _mode)
     emit modeChanged(modeString());
 }
 
-void Canvas2d::changeDrawMode(DrawMode _draw)
+void Canvas2D::changeDrawMode(DrawMode _draw)
 {
     drawMode=_draw;
     switch (drawMode) {
@@ -443,21 +443,21 @@ void Canvas2d::changeDrawMode(DrawMode _draw)
     emit modeChanged(modeString());
 }
 
-void Canvas2d::loadPixmap(QPixmap new_pixmap)
+void Canvas2D::loadPixmap(QPixmap new_pixmap)
 {
     pixmap = new_pixmap;
     adjustSize();
     update();
 }
 
-void Canvas2d::setScale(qreal new_scale)
+void Canvas2D::setScale(qreal new_scale)
 {
     scale = new_scale;
     adjustSize();
     update();
 }
 
-QPoint Canvas2d::offsetToCenter()
+QPoint Canvas2D::offsetToCenter()
 {
     qreal s = scale;
     int w = int(pixmap.width() * s), h=int(pixmap.height() * s);
@@ -467,14 +467,14 @@ QPoint Canvas2d::offsetToCenter()
     return QPoint(x,y);
 }
 
-QSize Canvas2d::minimumSizeHint() const
+QSize Canvas2D::minimumSizeHint() const
 {
     if (!pixmap.isNull())
         return scale * pixmap.size();
     return QWidget::minimumSizeHint();
 }
 
-int Canvas2d::selectShape(QPoint pos)
+int Canvas2D::selectShape(QPoint pos)
 {
     if (task==DETECTION){
         for (int i=pAnnoContainer->length()-1;i>=0;i--){
@@ -491,12 +491,12 @@ int Canvas2d::selectShape(QPoint pos)
     return -1;
 }
 
-QPoint Canvas2d::pixelPos(QPoint pos)
+QPoint Canvas2D::pixelPos(QPoint pos)
 {
     return pos / scale - offsetToCenter();
 }
 
-QPoint Canvas2d::boundedPixelPos(QPoint pos)
+QPoint Canvas2D::boundedPixelPos(QPoint pos)
 {
     pos = pos / scale - offsetToCenter();
     pos.setX(std::min(std::max(pos.x(), 0), pixmap.width()-1));
@@ -504,7 +504,7 @@ QPoint Canvas2d::boundedPixelPos(QPoint pos)
     return pos;
 }
 
-bool Canvas2d::outOfPixmap(QPoint pos)
+bool Canvas2D::outOfPixmap(QPoint pos)
 {
     int w = pixmap.width(), h= pixmap.height();
     return !(0<=pos.x() && pos.x()<w && 0<=pos.y() && pos.y()<h);

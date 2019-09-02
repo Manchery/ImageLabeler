@@ -8,11 +8,11 @@ enum EditingRectEdge{
     TOP, BOTTOM, LEFT, RIGHT
 };
 
-class Canvas2d : public CanvasBase
+class Canvas2D : public CanvasBase
 {
     Q_OBJECT    
 public:
-    explicit Canvas2d(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent=nullptr);
+    explicit Canvas2D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent=nullptr);
 
     /*--------------------from CanvasBase (parent class)-------------------*/
     QSize minimumSizeHint() const override;

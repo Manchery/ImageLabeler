@@ -26,6 +26,7 @@ public:
     QString getCurrentLabel();
 
     void keyPressEvent(QKeyEvent *event);
+    void keyReleaseEvent(QKeyEvent *event);
 
 
 public slots:
@@ -74,7 +75,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     CanvasBase *curCanvas;
-    Canvas2d *canvas2d;
+    Canvas2D *canvas2d;
     Canvas3D *canvas3d;
 
     LabelManager labelManager;

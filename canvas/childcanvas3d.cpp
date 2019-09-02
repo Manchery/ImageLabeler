@@ -2,12 +2,14 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPen>
+#include <QtDebug>
 
 ChildCanvas3D::ChildCanvas3D(QWidget *parent) : QWidget(parent)
 {
     mousePos = QPoint(0,0);
     scale=1.0;
     setMouseTracking(true);
+    mousePressing=false;
 }
 
 void ChildCanvas3D::loadImage(const QImage &newImage)
@@ -44,14 +46,24 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
     p.end();
 }
 
+void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
+{
+    mousePressing=true;
+}
+
 void ChildCanvas3D::mouseMoveEvent(QMouseEvent *event)
 {
     QPoint pixPos = pixelPos(event->pos());
     if (!outOfPixmap(pixPos)){
-        mousePos = pixPos;
-        update();
-        emit mouseMoved(mousePos);
+//        mousePos = pixPos;
+//        update();
+        emit mouseMoved(pixPos, mousePressing);
     }
+}
+
+void ChildCanvas3D::mouseReleaseEvent(QMouseEvent *event)
+{
+    mousePressing=false;
 }
 
 void ChildCanvas3D::mouseSetRequest(QPoint pos){

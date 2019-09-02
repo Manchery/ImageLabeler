@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "labeldialog.h"
 #include "canvas2d.h"
+#include "canvas3d.h"
 #include "utils.h"
 #include "rectannotationitem.h"
 #include <QLabel>
@@ -27,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    canvas2d = new Canvas2d(&labelManager, &annoContainer, ui->scrollArea);
+    canvas2d = new Canvas2D(&labelManager, &annoContainer, ui->scrollArea);
     canvas2d->setVisible(true); canvas2d->setEnabled(true);
     curCanvas = canvas2d;
 
@@ -38,7 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->scrollArea->setWidget(canvas2d);
 //    ui->scrollArea->setWidgetResizable(true);
 
-    connect(canvas2d, &Canvas2d::modeChanged, this, &MainWindow::reportCanvasMode);
+    connect(canvas2d, &Canvas2D::modeChanged, this, &MainWindow::reportCanvasMode);
+    connect(canvas3d, &Canvas3D::modeChanged, this, &MainWindow::reportCanvasMode);
 
     _setupToolBarAndStatusBar();
 
@@ -48,8 +50,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _setupFileManager();
 
-    connect(canvas2d, &Canvas2d::mouseMoved, this, &MainWindow::reportMouseMoved);
-    connect(canvas2d, &Canvas2d::zoomRequest, this, &MainWindow::zoomRequest);
+    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouseMoved);
+    connect(canvas2d, &Canvas2D::zoomRequest, this, &MainWindow::zoomRequest);
     connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
 }
 
@@ -71,7 +73,7 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox = new QSpinBox(ui->mainToolBar);
     penWidthBox->setRange(1,100);
     penWidthBox->setSingleStep(1);
-    penWidthBox->setValue(DEFAULT_PEN_WIDTH);
+    penWidthBox->setValue(1);
     penWidthBox->setWrapping(false);
     penWidthBox->setEnabled(false); // because the defalut mode is detection
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
@@ -171,12 +173,12 @@ void MainWindow::_setupAnnotationContainer()
     connect(ui->actionRedo, &QAction::triggered, &annoContainer, &AnnotationContainer::redo);
 
     // request from canvas
-    connect(canvas2d, &Canvas2d::newRectangleAnnotated, this, &MainWindow::getNewRect);
-    connect(canvas2d, &Canvas2d::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
+    connect(canvas2d, &Canvas2D::newRectangleAnnotated, this, &MainWindow::getNewRect);
+    connect(canvas2d, &Canvas2D::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
 
     // request from canvas only for bbox, not segmentation (TODO 3d
-    connect(canvas2d, &Canvas2d::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
-    connect(canvas2d, &Canvas2d::modifySelectedRectRequest, [this](int idx, QRect rect){
+    connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
+    connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
                 std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->label,
                                                      annoContainer.getSelectedItem()->id);
@@ -418,11 +420,26 @@ QString MainWindow::getCurrentLabel()
 
 void MainWindow::keyPressEvent(QKeyEvent *event){
     if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter)
-        if (canvas2d->getTaskMode()==SEGMENTATION && canvas2d->getCanvasMode()==DRAW){
+        if (curCanvas==canvas2d && canvas2d->getTaskMode()==SEGMENTATION && canvas2d->getCanvasMode()==DRAW){
             canvas2d->keyPressEvent(event);
             return;
         }
+    if (event->key()==Qt::Key_Control)
+        if (curCanvas==canvas3d){
+            canvas3d->keyPressEvent(event);
+            return;
+        }
+
     QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key()==Qt::Key_Control)
+        if (curCanvas==canvas3d){
+            canvas3d->keyReleaseEvent(event);
+            return;
+        }
 }
 
 void MainWindow::on_actionOpen_File_triggered()

@@ -20,20 +20,22 @@ public:
     bool outOfPixmap(QPoint pos);
     void setScale(qreal new_scale);
 signals:
-    void mouseMoved(QPoint pos);
+    void mouseMoved(QPoint pos, bool mousePressed);
 
 public slots:
     void paintEvent(QPaintEvent*);
+    void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent* event);
+    void mouseReleaseEvent(QMouseEvent *event);
     void mouseSetRequest(QPoint pos);
 
 private:
-
     qreal scale;
     QImage image;
 
     QPoint mousePos;
 
+    bool mousePressing;
 
     QPoint pixelPos(QPoint pos);
     QPoint boundedPixelPos(QPoint pos);

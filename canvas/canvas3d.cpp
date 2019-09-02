@@ -3,12 +3,11 @@
 #include <QPixmap>
 #include <QtDebug>
 #include <QPainter>
+#include <cmath>
 
 Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent):
-    CanvasBase (pLabelManager, pAnnoContainer, parent)
+    CanvasBase (pLabelManager, pAnnoContainer, parent), focusPos(0,0,0)
 {
-    mouseX = mouseY = mouseZ = 0;
-
     //! layout
     layout = new QGridLayout(this);
     this->setLayout(layout);
@@ -22,17 +21,26 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     layout->setSizeConstraint(QLayout::SetFixedSize);
     //! end layout
 
-    connect(canvasX, &ChildCanvas3D::mouseMoved, [this](QPoint pos){
-        mouseZ = pos.x(); mouseY = pos.y();
-        _syncMousePos();
+    connect(canvasX, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+        qDebug()<<"canvasX mouse move: "<<pos.x()<<" "<<pos.y();
+        if (mode == MOVE && mousePressed){
+            focusPos.z = pos.x(); focusPos.y = pos.y();
+            _updateFocusPos();
+        }
     });
-    connect(canvasY, &ChildCanvas3D::mouseMoved, [this](QPoint pos){
-        mouseX = pos.x(); mouseZ = pos.y();
-        _syncMousePos();
+    connect(canvasY, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+        qDebug()<<"canvasY mouse move: "<<pos.x()<<" "<<pos.y();
+        if (mode == MOVE && mousePressed){
+            focusPos.x = pos.x(); focusPos.z = pos.y();
+            _updateFocusPos();
+        }
     });
-    connect(canvasZ, &ChildCanvas3D::mouseMoved, [this](QPoint pos){
-        mouseX = pos.x(); mouseY = pos.y();
-        _syncMousePos();
+    connect(canvasZ, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+        qDebug()<<"canvasZ mouse move: "<<pos.x()<<" "<<pos.y();
+        if (mode == MOVE && mousePressed){
+            focusPos.x = pos.x(); focusPos.y = pos.y();
+            _updateFocusPos();
+        }
     });
 }
 
@@ -57,24 +65,48 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     imagesZ.clear();
     for (auto file: imagesFile)
         imagesZ.push_back(QImage(file));
-    mouseX = mouseY = mouseZ = 0;
-
-    canvasZ->loadImage(imagesZ[mouseZ]);
-    canvasX->loadImage(getXSlides(imagesZ, mouseX));
-    canvasY->loadImage(getYSlides(imagesZ, mouseY));
-
+    focusPos = Point3D(0,0,0);
+    repaint();
     _sizeUnscaled = layout->minimumSize();
 }
 
-void Canvas3D::_syncMousePos()
+void Canvas3D::keyPressEvent(QKeyEvent *event)
 {
-    canvasY->mouseSetRequest(QPoint(mouseX,mouseZ));
-    canvasX->mouseSetRequest(QPoint(mouseZ,mouseY));
-    canvasZ->mouseSetRequest(QPoint(mouseX,mouseY));
-    canvasZ->loadImage(imagesZ[mouseZ]);
-    canvasX->loadImage(getXSlides(imagesZ, mouseX));
-    canvasY->loadImage(getYSlides(imagesZ, mouseY));
-    emit mouse3DMoved(mouseX,mouseY,mouseZ);
+    if (event->key() == Qt::Key_Control){
+        lastMode = mode;
+        changeCanvasMode(MOVE);
+    }else{
+        QWidget::keyPressEvent(event);
+    }
+}
+
+void Canvas3D::keyReleaseEvent(QKeyEvent *event)
+{
+    if (event->key()==Qt::Key_Control){
+        changeCanvasMode(lastMode);
+    }else{
+        QWidget::keyReleaseEvent(event);
+    }
+}
+
+void Canvas3D::paintEvent(QPaintEvent *event)
+{
+    if (imagesZ.length()>0){
+        canvasZ->loadImage(imagesZ[focusPos.z]);
+        canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
+        canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
+    }else{
+        QWidget::paintEvent(event);
+    }
+}
+
+void Canvas3D::_updateFocusPos()
+{
+    canvasY->mouseSetRequest(QPoint(focusPos.x,focusPos.z));
+    canvasX->mouseSetRequest(QPoint(focusPos.z,focusPos.y));
+    canvasZ->mouseSetRequest(QPoint(focusPos.x,focusPos.y));
+    update();
+    emit focusMoved(focusPos);
 }
 
 QImage Canvas3D::getYSlides(const QList<QImage> &_imageZ, int y)
@@ -104,6 +136,8 @@ void Canvas3D::changeTask(TaskMode _task) {
     switch(_task){
     case DETECTION3D:
         task = TaskMode::DETECTION3D;
+        mode = CanvasMode::DRAW;
+        drawMode = DrawMode::RECTANGLE;
         break;
     case SEGMENTATION3D:
         task = TaskMode::SEGMENTATION3D;
