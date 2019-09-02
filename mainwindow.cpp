@@ -40,7 +40,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
 
-    // tool bar and status bar
+    _setupToolBarAndStatusBar();
+
+    _setupLabelManager();
+
+    _setupAnnotationContainer();
+
+    _setupFileManager();
+
+    connect(canvas, &Canvas::mouseMoved, this, &MainWindow::reportMouseMoved);
+    connect(canvas, &Canvas::zoomRequest, this, &MainWindow::zoomRequest);
+    connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
+}
+
+void MainWindow::_setupToolBarAndStatusBar()
+{
     taskComboBox = new QComboBox(ui->mainToolBar);
     taskComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     taskComboBox->addItem("Detection ");
@@ -66,22 +80,21 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
-//    connect(penWidthBox, &QSpinBox::valueChanged, canvas, &Canvas::setPenWidth);
     connect(penWidthBox, SIGNAL(valueChanged(int)), canvas, SLOT(setPenWidth(int)));
 
     unableFileActions();
 
     mousePosLabel = new QLabel();
     ui->statusBar->addPermanentWidget(mousePosLabel);
+}
 
-    //! end tool bar and status bar
-
-
-    // label manager
+void MainWindow::_setupLabelManager()
+{
     // signal-slot from-to: ui->list => label manager => canvas
     ui->labelListWidget->setSortingEnabled(true);
     ui->labelListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
+    // right click menu for label: change color & delete
     ui->labelListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->labelListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideLabelContextMenu);
@@ -95,7 +108,10 @@ MainWindow::MainWindow(QWidget *parent) :
                 }
             });
 
+    // label changed -> canvas repaint (TODO: 2d or 3d
     connect(&labelManager, &LabelManager::configChanged, canvas, qOverload<>(&QWidget::update));
+
+    // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
             ui->labelListWidget, &LabelListWidget::addCustomItem);
     connect(&labelManager, &LabelManager::labelRemoved,
@@ -107,18 +123,27 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&labelManager, &LabelManager::allCleared,
             ui->labelListWidget, &QListWidget::clear);
 
-    //! maybe label give back
+    // maybe give back a label when undo delete a anno
     connect(&annoContainer, &AnnotationContainer::labelGiveBack, this, &MainWindow::newLabelRequest);
 
-    //! end label manager
+    // widgets about add label
+    connect(ui->pushButton_addLabel, &QPushButton::clicked, [this](){
+        newLabelRequest(ui->lineEdit_addLabel->text());
+        ui->lineEdit_addLabel->setText("");
+    });
+    connect(ui->lineEdit_addLabel, &QLineEdit::returnPressed, [this](){
+        newLabelRequest(ui->lineEdit_addLabel->text());
+        ui->lineEdit_addLabel->setText("");
+    });
+}
 
-
-    // annotations container
+void MainWindow::_setupAnnotationContainer()
+{
     // signal-slot from-to: ui->action/canvas => annotations => canvas
     ui->annoListWidget->setSortingEnabled(false);
     ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    //! select
+    // select a anno to edit it
     connect(ui->annoListWidget, &QListWidget::itemSelectionChanged, [this](){
         auto items = ui->annoListWidget->selectedItems();
         if (items.length()==0){
@@ -129,26 +154,26 @@ MainWindow::MainWindow(QWidget *parent) :
         canvas->changeCanvasModeRequest();
     });
 
-    //! right click menu
+    // right click menu for anno : delete
     ui->annoListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->annoListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideAnnoContextMenu);
 
-    //! undo & redo
+    // undo & redo
     ui->actionUndo->setEnabled(false);
     connect(&annoContainer, &AnnotationContainer::UndoEnableChanged,
-            ui->actionUndo, &QAction::setEnabled);
+            ui->actionUndo, &QAction::setEnabled); // sync action enable
     connect(ui->actionUndo, &QAction::triggered, &annoContainer, &AnnotationContainer::undo);
     ui->actionRedo->setEnabled(false);
     connect(&annoContainer, &AnnotationContainer::RedoEnableChanged,
             ui->actionRedo, &QAction::setEnabled);
     connect(ui->actionRedo, &QAction::triggered, &annoContainer, &AnnotationContainer::redo);
 
-    //! request from canvas
+    // request from canvas
     connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas, &Canvas::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
 
-    ///! only for bbox, not segmentation
+    // request from canvas only for bbox, not segmentation (TODO 3d
     connect(canvas, &Canvas::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
@@ -157,10 +182,10 @@ MainWindow::MainWindow(QWidget *parent) :
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
-    //! to repaint canvas
+    // anno changed: canvas repaint (TODO: 2d or 3d
     connect(&annoContainer, &AnnotationContainer::dataChanged, canvas, qOverload<>(&QWidget::update));
 
-    //! to change ui->annolist
+    // anno changed: ui list changed
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
         for (int i=0;i<ui->annoListWidget->count();i++){
             auto item = ui->annoListWidget->item(i);
@@ -182,18 +207,21 @@ MainWindow::MainWindow(QWidget *parent) :
     });
     connect(&annoContainer, &AnnotationContainer::allCleared,
             ui->annoListWidget, &QListWidget::clear);
+}
 
-    //! end annotations
-
-    // file
+void MainWindow::_setupFileManager()
+{
     ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
+    // set change not saved, to warning when close
     connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
     connect(&annoContainer, &AnnotationContainer::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
 
+    // sync prev/next action enable (TODO 2d or 3d
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
 
+    // to update ui list
     connect(&fileManager, &FileManager::fileListSetup, [this](){
         if (fileManager.getMode() == Close) return;
         ui->fileListWidget->clear();
@@ -202,6 +230,7 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
     });
+    // click file item to switch image (TODO: 2d or 3d
     connect(ui->fileListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item){
         if (fileManager.getMode()==MultiImage){
             int idx = ui->fileListWidget->row(item);
@@ -210,23 +239,6 @@ MainWindow::MainWindow(QWidget *parent) :
             }
         }
     });
-    // end file
-
-    connect(canvas, &Canvas::mouseMoved, this, &MainWindow::reportMouseMoved);
-    connect(canvas, &Canvas::zoomRequest, this, &MainWindow::zoomRequest);
-    connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
-
-    // labeldialog
-    connect(ui->pushButton_addLabel, &QPushButton::clicked, [this](){
-        newLabelRequest(ui->lineEdit_addLabel->text());
-        ui->lineEdit_addLabel->setText("");
-    });
-    connect(ui->lineEdit_addLabel, &QLineEdit::returnPressed, [this](){
-        newLabelRequest(ui->lineEdit_addLabel->text());
-        ui->lineEdit_addLabel->setText("");
-    });
-    // end labeldialog
-
 }
 
 void MainWindow::taskModeChanged()
@@ -481,8 +493,9 @@ void MainWindow::on_actionOpen_Dir_triggered()
             fileManager.setAll(images, "_segment_annotations.json");
 
         }else if (taskComboBox->currentText()=="3D Detection "){
-            fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
             canvas3d->loadImagesZ(images);
+            adjustFitWindow();
+            fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
 
         }else if (taskComboBox->currentText()=="3D Segmentation "){
             //! TODO
@@ -605,12 +618,20 @@ void MainWindow::on_actionSave_As_triggered()
 
 void MainWindow::on_actionZoom_in_triggered()
 {
-    canvas->setScale(canvas->getScale()*1.1);
+    if (!taskComboBox->currentText().startsWith("3D")){
+        canvas->setScale(canvas->getScale()*1.1);
+    }else{
+        canvas3d->setScale(canvas3d->getScale()*1.1);
+    }
 }
 
 void MainWindow::on_actionZoom_out_triggered()
 {
-    canvas->setScale(canvas->getScale()*0.9);
+    if (!taskComboBox->currentText().startsWith("3D")){
+        canvas->setScale(canvas->getScale()*0.9);
+    }else{
+        canvas3d->setScale(canvas3d->getScale()*0.9);
+    }
 }
 
 qreal MainWindow::scaleFitWindow()
@@ -618,10 +639,17 @@ qreal MainWindow::scaleFitWindow()
     int w1 = ui->scrollArea->width() - 2; // So that no scrollbars are generated.
     int h1 = ui->scrollArea->height() - 2;
     qreal a1 = static_cast<qreal>(w1)/h1;
-    int w2 = canvas->getPixmap().width();
-    int h2 = canvas->getPixmap().height();
-    qreal a2 = static_cast<qreal>(w2)/h2;
-    return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
+    if (!taskComboBox->currentText().startsWith("3D")){
+        int w2 = canvas->getPixmap().width();
+        int h2 = canvas->getPixmap().height();
+        qreal a2 = static_cast<qreal>(w2)/h2;
+        return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
+    }else{
+        int w2 = canvas3d->sizeUnscaled().width();
+        int h2 = canvas3d->sizeUnscaled().height();
+        qreal a2 = static_cast<qreal>(w2)/h2;
+        return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
+    }
 }
 
 void MainWindow::enableFileActions()
@@ -642,10 +670,13 @@ void MainWindow::unableFileActions()
     taskComboBox->setEnabled(true);
 }
 
-
 void MainWindow::adjustFitWindow()
 {
-    canvas->setScale(scaleFitWindow());
+    if (!taskComboBox->currentText().startsWith("3D")){
+        canvas->setScale(scaleFitWindow());
+    }else{
+        canvas3d->setScale(scaleFitWindow());
+    }
 }
 
 void MainWindow::zoomRequest(qreal delta, QPoint pos)

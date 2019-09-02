@@ -10,8 +10,6 @@ class ChildCanvas3D : public QWidget
     Q_OBJECT
 public:
     explicit ChildCanvas3D(QWidget *parent = nullptr);
-    QSize sizeHint() const;
-    QSize minimumSizeHint() const;
 
     QSize getImageSize() const { return image.size(); }
     int getImageHeight() const { return image.height(); }

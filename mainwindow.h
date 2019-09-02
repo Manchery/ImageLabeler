@@ -90,6 +90,11 @@ private:
     bool _checkUnsaved();
     void _saveSegmentImageResults(QString oldSuffix);
 
+    void _setupToolBarAndStatusBar();
+    void _setupLabelManager();
+    void _setupAnnotationContainer();
+    void _setupFileManager();
+
 };
 
 #endif // MAINWINDOW_H

@@ -10,30 +10,17 @@ ChildCanvas3D::ChildCanvas3D(QWidget *parent) : QWidget(parent)
     setMouseTracking(true);
 }
 
-QSize ChildCanvas3D::sizeHint() const
-{
-    return minimumSizeHint();
-}
-
-QSize ChildCanvas3D::minimumSizeHint() const
-{
-    if (!image.isNull())
-        return scale*image.size();
-    return QWidget::minimumSizeHint();
-//    return QSize(1000,1000);
-}
-
 void ChildCanvas3D::loadImage(const QImage &newImage)
 {
     image = newImage;
-    adjustSize();
+    setFixedSize(image.size()*scale);
     update();
 }
 
 void ChildCanvas3D::setScale(qreal new_scale)
 {
     scale = new_scale;
-    adjustSize();
+    setFixedSize(image.size()*scale);
     update();
 }
 

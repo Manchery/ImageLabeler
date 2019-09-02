@@ -19,7 +19,6 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     canvasZ = new ChildCanvas3D(this);
     canvasX = new ChildCanvas3D(this);
     canvasY = new ChildCanvas3D(this);
-
     layout->addWidget(canvasZ, 0, 0);
     layout->addWidget(canvasX, 0, 1);
     layout->addWidget(canvasY, 1, 0);
@@ -71,21 +70,8 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     canvasZ->loadImage(imagesZ[mouseZ]);
     canvasX->loadImage(getXSlides(imagesZ, mouseX));
     canvasY->loadImage(getYSlides(imagesZ, mouseY));
-    canvasZ->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    canvasX->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-    canvasY->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-}
 
-
-void Canvas3D::paintEvent(QPaintEvent *event)
-{
-    if (imagesZ.length()>0){
-        canvasZ->loadImage(imagesZ[mouseZ]);
-        canvasX->loadImage(getXSlides(imagesZ, mouseX));
-        canvasY->loadImage(getYSlides(imagesZ, mouseY));
-    }else{
-        QWidget::paintEvent(event);
-    }
+    _sizeUnscaled = layout->minimumSize();
 }
 
 void Canvas3D::_syncMousePos()
@@ -93,6 +79,9 @@ void Canvas3D::_syncMousePos()
     canvasY->mouseSetRequest(QPoint(mouseX,mouseZ));
     canvasX->mouseSetRequest(QPoint(mouseZ,mouseY));
     canvasZ->mouseSetRequest(QPoint(mouseX,mouseY));
+    canvasZ->loadImage(imagesZ[mouseZ]);
+    canvasX->loadImage(getXSlides(imagesZ, mouseX));
+    canvasY->loadImage(getYSlides(imagesZ, mouseY));
     emit mouse3DMoved(mouseX,mouseY,mouseZ);
 }
 

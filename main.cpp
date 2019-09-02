@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "mainwindowtest.h"
 #include <QApplication>
 #include <ctime>
 #include <QtDebug>

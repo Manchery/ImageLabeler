@@ -25,13 +25,11 @@ public:
     int maxX() const { return _bottomRight.x; }
     int maxY() const { return _bottomRight.y; }
     int maxZ() const { return _bottomRight.z; }
-    Cuboid normalized() const {
-        Point3D newTopLeft(_topLeft), newBottomRight(_bottomRight);
-        if (newTopLeft.x > newBottomRight.x) std::swap(newTopLeft.x, newBottomRight.x);
-        if (newTopLeft.y > newBottomRight.y) std::swap(newTopLeft.y, newBottomRight.y);
-        if (newTopLeft.z > newBottomRight.z) std::swap(newTopLeft.z, newBottomRight.z);
-        return Cuboid(newTopLeft, newBottomRight);
-    }
+    QRect rectZ() const { return QRect(QPoint(minX(),maxX()), QPoint(minY(), maxY())); }
+    QRect rectX() const { return QRect(QPoint(minZ(),maxZ()), QPoint(minY(), maxY())); }
+    QRect rectY() const { return QRect(QPoint(minX(),maxX()), QPoint(minZ(), maxZ())); }
+    Cuboid normalized() const;
+
     void fromJsonArray(const QJsonArray &array);
     QJsonArray toJsonArray() const;
 private:

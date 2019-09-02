@@ -17,6 +17,14 @@ QJsonArray Point3D::toJsonArray() const {
 //-------------------------------------Point 3D END--------------------------------//
 
 
+Cuboid Cuboid::normalized() const {
+    Point3D newTopLeft(_topLeft), newBottomRight(_bottomRight);
+    if (newTopLeft.x > newBottomRight.x) std::swap(newTopLeft.x, newBottomRight.x);
+    if (newTopLeft.y > newBottomRight.y) std::swap(newTopLeft.y, newBottomRight.y);
+    if (newTopLeft.z > newBottomRight.z) std::swap(newTopLeft.z, newBottomRight.z);
+    return Cuboid(newTopLeft, newBottomRight);
+}
+
 void Cuboid::fromJsonArray(const QJsonArray &array)
 {
     if (array.size()!=2) throw "abnormal array length for cuboid";

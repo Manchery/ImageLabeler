@@ -18,6 +18,9 @@ public:
 
     QSize sizeHint() const;
     QSize minimumSizeHint() const;
+    QSize sizeUnscaled() const {
+        return _sizeUnscaled;
+    }
 
     void setScale(qreal newScale);
 
@@ -25,12 +28,14 @@ public:
 
     void changeTask(TaskMode _task);
     TaskMode getTaskMode() const { return task; }
+    qreal getScale() const { return scale; }
 
 signals:
     void mouse3DMoved(int x,int y,int z);
+
 public slots:
-    void paintEvent(QPaintEvent*);
     void changeDrawMode(DrawMode _draw);
+
 private:
     qreal scale;
 
@@ -50,6 +55,8 @@ private:
     void _syncMousePos();
     QImage getYSlides(const QList<QImage>& _imageZ, int y);
     QImage getXSlides(const QList<QImage>& _imageZ, int x);
+
+    QSize _sizeUnscaled;
 };
 
 #endif // CANVAS3D_H
