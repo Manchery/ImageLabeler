@@ -23,20 +23,24 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     //! end layout
 
     connect(canvasX, &ChildCanvas3D::focusMoved, [this](QPoint pos){
-        qDebug()<<"canvasX mouse move: "<<pos.x()<<" "<<pos.y();
         focusPos.z = pos.x(); focusPos.y = pos.y();
-        _updateFocusPos();
+        update();
+        emit focus3dMoved(focusPos);
     });
     connect(canvasY, &ChildCanvas3D::focusMoved, [this](QPoint pos){
-        qDebug()<<"canvasY mouse move: "<<pos.x()<<" "<<pos.y();
         focusPos.x = pos.x(); focusPos.z = pos.y();
-        _updateFocusPos();
+        update();
+        emit focus3dMoved(focusPos);
     });
     connect(canvasZ, &ChildCanvas3D::focusMoved, [this](QPoint pos){
-        qDebug()<<"canvasZ mouse move: "<<pos.x()<<" "<<pos.y();
         focusPos.x = pos.x(); focusPos.y = pos.y();
-        _updateFocusPos();
+        update();
+        emit focus3dMoved(focusPos);
     });
+
+    connect(canvasX, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
+    connect(canvasY, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
+    connect(canvasZ, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
 
     connect(canvasX, &ChildCanvas3D::newRectAnnotated, [this](QRect rect){
         Cuboid cube;
@@ -56,6 +60,72 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
         cube.setBottomRight(rect.right(), rect.bottom(), std::min(focusPos.z+10, sizeZ()-1));
         emit newCubeAnnotated(cube);
     });
+
+    connect(canvasX, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
+    connect(canvasY, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
+    connect(canvasZ, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
+
+    connect(canvasX, &ChildCanvas3D::mousePressWhenSelected,
+            [this](Point3D cursorPos){ this->mousePressedWhenSelected(cursorPos, canvasX); });
+    connect(canvasY, &ChildCanvas3D::mousePressWhenSelected,
+            [this](Point3D cursorPos){ this->mousePressedWhenSelected(cursorPos, canvasY); });
+    connect(canvasZ, &ChildCanvas3D::mousePressWhenSelected,
+            [this](Point3D cursorPos){ this->mousePressedWhenSelected(cursorPos, canvasZ); });
+
+    connect(canvasX, &ChildCanvas3D::mouseMoveWhenSelected, this, &Canvas3D::mouseMovedWhenSelected);
+    connect(canvasY, &ChildCanvas3D::mouseMoveWhenSelected, this, &Canvas3D::mouseMovedWhenSelected);
+    connect(canvasZ, &ChildCanvas3D::mouseMoveWhenSelected, this, &Canvas3D::mouseMovedWhenSelected);
+
+    connect(canvasX, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
+    connect(canvasY, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
+    connect(canvasZ, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
+}
+
+
+void Canvas3D::mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child)
+{
+    auto item = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
+    Cuboid selectedCube = item->cube;
+    if (onCubeFront(cursorPos, selectedCube) && (child==canvasZ || child == canvasX)){
+        editing = true; editingCube = selectedCube; editingCubeFace = FRONTf;
+    } else if (onCubeBack(cursorPos, selectedCube) && (child==canvasZ || child == canvasX)){
+        editing = true; editingCube = selectedCube; editingCubeFace = BACKf;
+    } else if (onCubeLeft(cursorPos, selectedCube) && (child==canvasZ || child == canvasY)){
+        editing = true; editingCube = selectedCube; editingCubeFace = LEFTf;
+    } else if (onCubeRight(cursorPos, selectedCube) && (child==canvasZ || child == canvasY)){
+        editing = true; editingCube = selectedCube; editingCubeFace = RIGHTf;
+    } else if (onCubeTop(cursorPos, selectedCube) && (child==canvasX || child == canvasY)){
+        editing = true; editingCube = selectedCube; editingCubeFace = TOPf;
+    } else if (onCubeBottom(cursorPos, selectedCube) && (child==canvasX || child == canvasY)){
+        editing = true; editingCube = selectedCube; editingCubeFace = BOTTOMf;
+    }
+}
+
+void Canvas3D::mouseMovedWhenSelected(Point3D cursorPos)
+{
+    switch(editingCubeFace){
+    case FRONTf:
+        editingCube.setmaxY(cursorPos.y); break;
+    case BACKf:
+        editingCube.setminY(cursorPos.y); break;
+    case LEFTf:
+        editingCube.setminX(cursorPos.x); break;
+    case RIGHTf:
+        editingCube.setmaxX(cursorPos.x); break;
+    case TOPf:
+        editingCube.setminZ(cursorPos.z); break;
+    case BOTTOMf:
+        editingCube.setmaxZ(cursorPos.z); break;
+    }
+    canvasX->update();
+    canvasY->update();
+    canvasZ->update();
+}
+
+void Canvas3D::mouseReleasedWhenSelected()
+{
+    editing = false;
+    emit modifySelectedCubeRequest(pAnnoContainer->getSelectedIdx(), editingCube.normalized());
 }
 
 QSize Canvas3D::minimumSizeHint() const
@@ -117,15 +187,6 @@ void Canvas3D::paintEvent(QPaintEvent *event)
     }
 }
 
-void Canvas3D::_updateFocusPos()
-{
-    canvasY->mouseSetRequest(QPoint(focusPos.x,focusPos.z));
-    canvasX->mouseSetRequest(QPoint(focusPos.z,focusPos.y));
-    canvasZ->mouseSetRequest(QPoint(focusPos.x,focusPos.y));
-    update();
-    emit focusMoved(focusPos);
-}
-
 QImage Canvas3D::getYSlides(const QList<QImage> &_imageZ, int y)
 {
     int row = _imageZ[0].width();
@@ -167,14 +228,6 @@ void Canvas3D::changeTask(TaskMode _task) {
 
 void Canvas3D::changeCanvasMode(CanvasMode _mode)
 {
-    //!</TODO
-    if (mode == SELECT){
-        if (task == DETECTION3D){
-            auto item = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
-            setFocusPos(item->cube.center());
-        }
-    }
-    //!TODO/>
     if (mode == _mode) return;
     mode = _mode;
     if (mode == MOVE){

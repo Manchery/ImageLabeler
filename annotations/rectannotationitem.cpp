@@ -57,3 +57,22 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
     }
 
 }
+
+void drawRectAnnotation(QPainter &p, const QRect &rect,
+                        QColor brushColor, qreal brushAlphaF,
+                        QColor penColor, qreal penAlphaF)
+{
+    p.save();
+    brushColor.setAlphaF(brushAlphaF); QBrush brush(brushColor); p.setBrush(brush);
+    penColor.setAlphaF(penAlphaF); QPen pen(penColor); p.setPen(pen);
+    p.drawRect(rect);
+    p.restore();
+}
+
+void drawRectAnnotation(QPainter &p, const QRect &rect, const QBrush &brush, const QPen &pen)
+{
+    p.save();
+    p.setBrush(brush); p.setPen(pen);
+    p.drawRect(rect);
+    p.restore();
+}

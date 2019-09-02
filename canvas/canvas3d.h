@@ -38,8 +38,11 @@ public:
     int sizeZ() const { return imagesZ.length(); }
 
 signals:
-    void focusMoved(Point3D focusPos);
+    void focus3dMoved(Point3D focusPos);
+    void cursor3dMoved(Point3D cursorPos);
     void newCubeAnnotated(Cuboid cube);
+    void removeCubeRequest(int idx);
+    void modifySelectedCubeRequest(int idx, Cuboid cube);
 
 public slots:
     /*--------------------from CanvasBase (parent class)-------------------*/
@@ -50,6 +53,10 @@ public slots:
     /*--------------------from CanvasBase (parent class) END----------------*/
 
     void setFocusPos(Point3D pos) { focusPos = pos; update(); }
+
+    void mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child);
+    void mouseMovedWhenSelected(Point3D cursorPos);
+    void mouseReleasedWhenSelected();
 private:
     QGridLayout *layout;
     ChildCanvas3D *canvasZ, *canvasX, *canvasY;
@@ -64,6 +71,12 @@ private:
     QSize _sizeUnscaled;
 
     CanvasMode lastMode;
+
+    //! for bbox editing
+    Cuboid editingCube;
+    bool editing;
+    EditingCubeFace editingCubeFace;
+
 };
 
 #endif // CANVAS3D_H

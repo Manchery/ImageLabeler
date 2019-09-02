@@ -42,19 +42,13 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                     continue;
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].color.isValid()){
-                    p.save();
                     QColor color = (*pLabelManager)[label].color;
-                    color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);
-                    color.setAlphaF(0.5); QPen pen(color); p.setPen(pen);
-                    p.drawRect(rect);
-                    p.restore();
+                    drawRectAnnotation(p, rect, color, 0.2, color, 0.5);
                 }else{
                     p.drawRect(rect);
                 }
 
-                QFont font("Helvetica");
-                font.setFamily("Times");
-                font.setPixelSize(10);
+                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
                 p.drawText(rect.topLeft()-QPoint(0,10), label);
             }
             if (curPoints.length()>0){ // drawing
@@ -73,12 +67,8 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                     continue;
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].color.isValid()){
-                    p.save();
                     QColor color = (*pLabelManager)[label].color;
-                    color.setAlphaF(0.1); QBrush brush(color); p.setBrush(brush);
-                    color.setAlphaF(0.2); QPen pen(color); p.setPen(pen);
-                    p.drawRect(rect);
-                    p.restore();
+                    drawRectAnnotation(p, rect, color, 0.1, color, 0.2);
                 }else{
                     p.drawRect(rect);
                 }
@@ -89,13 +79,11 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             p.save();
             QColor color = (*pLabelManager)[selectedLabel].color;
             color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);
-            color.setAlphaF(0.5); QPen pen(Qt::white); pen.setStyle(Qt::DashLine); p.setPen(pen);
+            QPen pen(Qt::white); pen.setStyle(Qt::DashLine); p.setPen(pen);
             p.drawRect(drawedRect);
             p.restore();
 
-            QFont font("Helvetica");
-            font.setFamily("Times");
-            font.setPixelSize(10);
+            QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
             p.drawText(drawedRect.topLeft()-QPoint(0,10), selectedLabel);
         }
     }else if (task == SEGMENTATION){

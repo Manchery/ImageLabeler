@@ -39,3 +39,45 @@ bool onRectLeft(QPoint pos, QRect rect){
 bool onRectRight(QPoint pos, QRect rect){
     return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=eps;
 }
+
+bool onCubeTop(Point3D pos, Cuboid cube)
+{
+    return cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+            abs(pos.z - cube.minZ())<eps;
+}
+
+bool onCubeBottom(Point3D pos, Cuboid cube)
+{
+    return cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+            abs(pos.z - cube.maxZ())<eps;
+}
+
+bool onCubeLeft(Point3D pos, Cuboid cube)
+{
+    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
+            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+            abs(pos.x - cube.minX())<eps;
+}
+
+bool onCubeRight(Point3D pos, Cuboid cube)
+{
+    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
+            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+            abs(pos.x - cube.maxX())<eps;
+}
+
+bool onCubeFront(Point3D pos, Cuboid cube)
+{
+    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
+            cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+            abs(pos.y - cube.maxY())<eps;
+}
+
+bool onCubeBack(Point3D pos, Cuboid cube)
+{
+    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
+            cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+            abs(pos.y - cube.minY())<eps;
+}

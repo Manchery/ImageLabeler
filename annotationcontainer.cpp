@@ -81,7 +81,7 @@ void AnnotationContainer::undo(){
 void AnnotationContainer::setSelected(int idx)
 {
     selectedIdx=idx;
-    qDebug()<<"Select "<< idx;
+//    qDebug()<<"Select "<< idx;
     emit dataChanged();
 }
 

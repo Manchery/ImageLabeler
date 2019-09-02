@@ -25,11 +25,17 @@ public:
     int maxX() const { return _bottomRight.x; }
     int maxY() const { return _bottomRight.y; }
     int maxZ() const { return _bottomRight.z; }
+    void setminX(int x) { _topLeft.x = x; }
+    void setminY(int y) { _topLeft.y = y; }
+    void setminZ(int z) { _topLeft.z = z; }
+    void setmaxX(int x) { _bottomRight.x = x; }
+    void setmaxY(int y) { _bottomRight.y = y; }
+    void setmaxZ(int z) { _bottomRight.z = z; }
     QRect rectZ() const { return QRect(QPoint(minX(),minY()), QPoint(maxX(), maxY())); }
     QRect rectX() const { return QRect(QPoint(minZ(),minY()), QPoint(maxZ(), maxY())); }
     QRect rectY() const { return QRect(QPoint(minX(),minZ()), QPoint(maxX(), maxZ())); }
     Cuboid normalized() const;
-    bool contains(Point3D pos) const;
+    bool contains(Point3D pos, int margin=0) const;
     Point3D center() const {
         return Point3D((minX()+maxX())/2, (minY()+maxY())/2, (minZ()+maxZ())/2);
     }

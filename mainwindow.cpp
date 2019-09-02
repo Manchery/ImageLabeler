@@ -110,8 +110,8 @@ void MainWindow::_setupLabelManager()
                 }
             });
 
-    // label changed -> canvas repaint (TODO: 2d or 3d
-    connect(&labelManager, &LabelManager::configChanged, canvas2d, qOverload<>(&QWidget::update));
+    // label changed -> canvas repaint (TODO: 2d or 3d /FINISHED?
+    connect(&labelManager, &LabelManager::configChanged, curCanvas, qOverload<>(&QWidget::update));
 
     // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
@@ -154,6 +154,10 @@ void MainWindow::_setupAnnotationContainer()
         }else{
             annoContainer.setSelected(ui->annoListWidget->row(items[0]));
             curCanvas->changeCanvasMode(SELECT);
+            if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
+                auto item = CubeAnnotationItem::castPointer(annoContainer.getSelectedItem());
+                canvas3d->setFocusPos(item->cube.center());
+            }
         }
     });
 
@@ -178,7 +182,7 @@ void MainWindow::_setupAnnotationContainer()
 
     connect(canvas3d, &Canvas3D::newCubeAnnotated, this, &MainWindow::getNewCube);
 
-    // request from canvas only for bbox, not segmentation (TODO 3d
+    // request from canvas only for bbox, not segmentation
     connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
@@ -187,8 +191,16 @@ void MainWindow::_setupAnnotationContainer()
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
-    // anno changed: canvas repaint (TODO: 2d or 3d
-    connect(&annoContainer, &AnnotationContainer::dataChanged, canvas2d, qOverload<>(&QWidget::update));
+    connect(canvas3d, &Canvas3D::removeCubeRequest, &annoContainer, &AnnotationContainer::remove);
+    connect(canvas3d, &Canvas3D::modifySelectedCubeRequest, [this](int idx, Cuboid cube){
+        std::shared_ptr<CubeAnnotationItem> item =
+                std::make_shared<CubeAnnotationItem>(cube, annoContainer.getSelectedItem()->label,
+                                                     annoContainer.getSelectedItem()->id);
+        annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
+    });
+
+    // anno changed: canvas repaint (TODO: 2d or 3d /FINISHED?
+    connect(&annoContainer, &AnnotationContainer::dataChanged, curCanvas, qOverload<>(&QWidget::update));
 
     // anno changed: ui list changed
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){

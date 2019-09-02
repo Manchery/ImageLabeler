@@ -2,11 +2,8 @@
 #define CANVAS_H
 
 #include "canvasbase.h"
+#include "utils.h"
 #include <QRect>
-
-enum EditingRectEdge{
-    TOP, BOTTOM, LEFT, RIGHT
-};
 
 class Canvas2D : public CanvasBase
 {
@@ -29,7 +26,7 @@ public:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 
-    //! for bbox editing
+    //! for bbox removing
     int selectShape(QPoint pos);
 
 signals:

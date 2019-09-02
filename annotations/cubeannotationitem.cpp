@@ -29,10 +29,10 @@ Cuboid Cuboid::normalized() const {
     return Cuboid(newTopLeft, newBottomRight);
 }
 
-bool Cuboid::contains(Point3D pos) const {
-    return minX()<=pos.x && pos.x<=maxX() &&
-            minY()<=pos.y && pos.y<=maxY() &&
-            minZ()<=pos.z && pos.z<=maxZ();
+bool Cuboid::contains(Point3D pos, int margin) const {
+    return minX()-margin<=pos.x && pos.x<=maxX()+margin &&
+            minY()-margin<=pos.y && pos.y<=maxY()+margin &&
+            minZ()-margin<=pos.z && pos.z<=maxZ()+margin;
 }
 
 void Cuboid::fromJsonArray(const QJsonArray &array)
