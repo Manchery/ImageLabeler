@@ -1,5 +1,11 @@
 #include "segannotationitem.h"
 #include "annotationcontainer.h"
+#include <QColor>
+#include <QPainterPath>
+#include <QPen>
+#include <QBrush>
+#include <QPainter>
+#include <QtDebug>
 
 SegStroke::SegStroke(): type(),penWidth(-1), points() { }
 
@@ -87,7 +93,7 @@ QString SegAnnotationItem::toStr(){
     return label+" "+QString::number(id);
 }
 
-QJsonObject SegAnnotationItem::toJsonObject(){
+QJsonObject SegAnnotationItem::toJsonObject() const{
     QJsonObject json = AnnotationItem::toJsonObject();
     QJsonArray array;
     for (auto stroke: strokes){

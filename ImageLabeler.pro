@@ -29,6 +29,7 @@ INCLUDEPATH = widgets canvas annotations
 SOURCES += \
         annotationcontainer.cpp \
         annotations/annotationitem.cpp \
+        annotations/cubeannotationitem.cpp \
         annotations/rectannotationitem.cpp \
         annotations/segannotationitem.cpp \
         canvas/canvas.cpp \
@@ -46,6 +47,7 @@ SOURCES += \
 HEADERS += \
         annotationcontainer.h \
         annotations/annotationitem.h \
+        annotations/cubeannotationitem.h \
         annotations/rectannotationitem.h \
         annotations/segannotationitem.h \
         canvas/canvas.h \

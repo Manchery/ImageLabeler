@@ -18,7 +18,7 @@ QString RectAnnotationItem::toStr(){
     return label+" "+QString::number(id)+" ("+topLeftStr+","+bottomRightStr+")";
 }
 
-QJsonObject RectAnnotationItem::toJsonObject(){
+QJsonObject RectAnnotationItem::toJsonObject() const{
     QJsonObject json = AnnotationItem::toJsonObject();
     QJsonArray points, point1, point2;
     point1.append(rect.topLeft().x());

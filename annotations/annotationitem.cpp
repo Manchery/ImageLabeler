@@ -10,7 +10,7 @@ AnnotationItem::AnnotationItem(QString label, int id):label(label), id(id) {}
 
 AnnotationItem::~AnnotationItem() {}
 
-QJsonObject AnnotationItem::toJsonObject() {
+QJsonObject AnnotationItem::toJsonObject() const {
     QJsonObject json;
     json.insert("label", label);
     json.insert("id", id);

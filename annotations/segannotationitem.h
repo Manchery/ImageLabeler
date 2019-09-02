@@ -6,12 +6,6 @@
 #include <QList>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QtDebug>
-#include <QColor>
-#include <QPainterPath>
-#include <QPen>
-#include <QBrush>
-#include <QPainter>
 
 struct SegStroke{
     QString type;
@@ -31,7 +25,7 @@ public:
     SegAnnotationItem();
     SegAnnotationItem(const QList<SegStroke>& strokes, QString label, int id);
     QString toStr();
-    QJsonObject toJsonObject();
+    QJsonObject toJsonObject() const;
     void fromJsonObject(const QJsonObject &json);
 };
 
