@@ -176,6 +176,8 @@ void MainWindow::_setupAnnotationContainer()
     connect(canvas2d, &Canvas2D::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas2d, &Canvas2D::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
 
+    connect(canvas3d, &Canvas3D::newCubeAnnotated, this, &MainWindow::getNewCube);
+
     // request from canvas only for bbox, not segmentation (TODO 3d
     connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
@@ -307,7 +309,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::getNewRect(QRect rect)
+
+QString MainWindow::_labelRequest()
 {
     QString curLabel = getCurrentLabel();
     if (curLabel==""){
@@ -315,36 +318,46 @@ void MainWindow::getNewRect(QRect rect)
         if (dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            curLabel = newLabel;
+            return newLabel; // maybe empty?
         }else {
-            return;
+            return "";
         }
+    }else{
+        return curLabel;
     }
+}
 
+void MainWindow::getNewRect(QRect rect)
+{
+    QString label = _labelRequest();
+    if (label=="") return;
     std::shared_ptr<RectAnnotationItem> item =
-            std::make_shared<RectAnnotationItem>(rect, curLabel,
-                                                 annoContainer.newInstanceIdForLabel(curLabel));
+            std::make_shared<RectAnnotationItem>(rect, label,
+                                                 annoContainer.newInstanceIdForLabel(label));
+    annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
+}
+
+
+void MainWindow::getNewCube(Cuboid cube)
+{
+    QString label = _labelRequest();
+    if (label=="") return;
+    std::shared_ptr<CubeAnnotationItem> item =
+            std::make_shared<CubeAnnotationItem>(cube, label,
+                                                 annoContainer.newInstanceIdForLabel(label));
     annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
 
 void MainWindow::getNewStrokes(const QList<SegStroke> &strokes)
 {
-    QString curLabel = getCurrentLabel();
-    if (curLabel==""){
-        LabelDialog dialog(labelManager, this);
-        if (dialog.exec() == QDialog::Accepted) {
-            QString newLabel = dialog.getLabel();
-            newLabelRequest(newLabel);
-            curLabel = newLabel;
-        }else {
-            return;
-        }
-    }
+    QString label = _labelRequest();
+    if (label=="") return;
     std::shared_ptr<SegAnnotationItem> item =
-            std::make_shared<SegAnnotationItem>(strokes, curLabel,
-                                                 annoContainer.newInstanceIdForLabel(curLabel));
+            std::make_shared<SegAnnotationItem>(strokes, label,
+                                                 annoContainer.newInstanceIdForLabel(label));
     annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
+
 
 void MainWindow::newLabelRequest(QString newLabel)
 {

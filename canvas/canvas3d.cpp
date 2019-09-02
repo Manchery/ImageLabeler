@@ -4,6 +4,7 @@
 #include <QtDebug>
 #include <QPainter>
 #include <cmath>
+#include <algorithm>
 
 Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent):
     CanvasBase (pLabelManager, pAnnoContainer, parent), focusPos(0,0,0)
@@ -12,35 +13,48 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     layout = new QGridLayout(this);
     this->setLayout(layout);
 
-    canvasZ = new ChildCanvas3D(this);
-    canvasX = new ChildCanvas3D(this);
-    canvasY = new ChildCanvas3D(this);
+    canvasZ = new ChildCanvas3D(this, Z, this);
+    canvasX = new ChildCanvas3D(this, X, this);
+    canvasY = new ChildCanvas3D(this, Y, this);
     layout->addWidget(canvasZ, 0, 0);
     layout->addWidget(canvasX, 0, 1);
     layout->addWidget(canvasY, 1, 0);
     layout->setSizeConstraint(QLayout::SetFixedSize);
     //! end layout
 
-    connect(canvasX, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+    connect(canvasX, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         qDebug()<<"canvasX mouse move: "<<pos.x()<<" "<<pos.y();
-        if (mode == MOVE && mousePressed){
-            focusPos.z = pos.x(); focusPos.y = pos.y();
-            _updateFocusPos();
-        }
+        focusPos.z = pos.x(); focusPos.y = pos.y();
+        _updateFocusPos();
     });
-    connect(canvasY, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+    connect(canvasY, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         qDebug()<<"canvasY mouse move: "<<pos.x()<<" "<<pos.y();
-        if (mode == MOVE && mousePressed){
-            focusPos.x = pos.x(); focusPos.z = pos.y();
-            _updateFocusPos();
-        }
+        focusPos.x = pos.x(); focusPos.z = pos.y();
+        _updateFocusPos();
     });
-    connect(canvasZ, &ChildCanvas3D::mouseMoved, [this](QPoint pos, bool mousePressed){
+    connect(canvasZ, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         qDebug()<<"canvasZ mouse move: "<<pos.x()<<" "<<pos.y();
-        if (mode == MOVE && mousePressed){
-            focusPos.x = pos.x(); focusPos.y = pos.y();
-            _updateFocusPos();
-        }
+        focusPos.x = pos.x(); focusPos.y = pos.y();
+        _updateFocusPos();
+    });
+
+    connect(canvasX, &ChildCanvas3D::newRectAnnotated, [this](QRect rect){
+        Cuboid cube;
+        cube.setTopLeft(std::max(focusPos.x-10, 0), rect.top(), rect.left());
+        cube.setBottomRight(std::min(focusPos.x+10, sizeX()-1), rect.bottom(), rect.right());
+        emit newCubeAnnotated(cube);
+    });
+    connect(canvasY, &ChildCanvas3D::newRectAnnotated, [this](QRect rect){
+        Cuboid cube;
+        cube.setTopLeft(rect.left(), std::max(focusPos.y-10, 0), rect.top());
+        cube.setBottomRight(rect.right(), std::min(focusPos.y+10, sizeY()-1), rect.bottom());
+        emit newCubeAnnotated(cube);
+    });
+    connect(canvasZ, &ChildCanvas3D::newRectAnnotated, [this](QRect rect){
+        Cuboid cube;
+        cube.setTopLeft(rect.left(), rect.top(), std::max(focusPos.z-10, 0));
+        cube.setBottomRight(rect.right(), rect.bottom(), std::min(focusPos.z+10, sizeZ()-1));
+        emit newCubeAnnotated(cube);
     });
 }
 
@@ -65,7 +79,7 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     imagesZ.clear();
     for (auto file: imagesFile)
         imagesZ.push_back(QImage(file));
-    focusPos = Point3D(0,0,0);
+    focusPos = Point3D(imagesZ[0].width()/2,imagesZ[0].height()/2,0);
     repaint();
     _sizeUnscaled = layout->minimumSize();
 }
@@ -74,6 +88,7 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Control){
         lastMode = mode;
+        //!!! TODO: need some if to avoid breaking current operation
         changeCanvasMode(MOVE);
     }else{
         QWidget::keyPressEvent(event);
@@ -83,7 +98,9 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
 void Canvas3D::keyReleaseEvent(QKeyEvent *event)
 {
     if (event->key()==Qt::Key_Control){
-        changeCanvasMode(lastMode);
+        if (mode==MOVE){
+            changeCanvasMode(lastMode);
+        }
     }else{
         QWidget::keyReleaseEvent(event);
     }
@@ -150,8 +167,21 @@ void Canvas3D::changeTask(TaskMode _task) {
 
 void Canvas3D::changeCanvasMode(CanvasMode _mode)
 {
+    //!</TODO
+    if (mode == SELECT){
+        if (task == DETECTION3D){
+            auto item = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
+            setFocusPos(item->cube.center());
+        }
+    }
+    //!TODO/>
     if (mode == _mode) return;
     mode = _mode;
+    if (mode == MOVE){
+        canvasX->resetMousePressing();
+        canvasY->resetMousePressing();
+        canvasZ->resetMousePressing();
+    }
     emit modeChanged(modeString());
 }
 

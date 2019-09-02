@@ -15,8 +15,8 @@ struct Point3D {
 
 class Cuboid{
 public:
-    Cuboid() { }
-    Cuboid(Point3D topLeft, Point3D bottomRight):_topLeft(topLeft), _bottomRight(bottomRight) {}
+    Cuboid();
+    Cuboid(Point3D topLeft, Point3D bottomRight);
     Point3D topLeft() const { return _topLeft; }
     Point3D bottomRight() const { return _bottomRight; }
     int minX() const { return _topLeft.x; }
@@ -25,10 +25,19 @@ public:
     int maxX() const { return _bottomRight.x; }
     int maxY() const { return _bottomRight.y; }
     int maxZ() const { return _bottomRight.z; }
-    QRect rectZ() const { return QRect(QPoint(minX(),maxX()), QPoint(minY(), maxY())); }
-    QRect rectX() const { return QRect(QPoint(minZ(),maxZ()), QPoint(minY(), maxY())); }
-    QRect rectY() const { return QRect(QPoint(minX(),maxX()), QPoint(minZ(), maxZ())); }
+    QRect rectZ() const { return QRect(QPoint(minX(),minY()), QPoint(maxX(), maxY())); }
+    QRect rectX() const { return QRect(QPoint(minZ(),minY()), QPoint(maxZ(), maxY())); }
+    QRect rectY() const { return QRect(QPoint(minX(),minZ()), QPoint(maxX(), maxZ())); }
     Cuboid normalized() const;
+    bool contains(Point3D pos) const;
+    Point3D center() const {
+        return Point3D((minX()+maxX())/2, (minY()+maxY())/2, (minZ()+maxZ())/2);
+    }
+
+    void setTopLeft(Point3D pos) { _topLeft = pos; }
+    void setTopLeft(int x,int y,int z) { setTopLeft(Point3D(x,y,z)); }
+    void setBottomRight(Point3D pos) { _bottomRight = pos; }
+    void setBottomRight(int x,int y,int z) { setBottomRight(Point3D(x,y,z)); }
 
     void fromJsonArray(const QJsonArray &array);
     QJsonArray toJsonArray() const;

@@ -17,12 +17,22 @@ QJsonArray Point3D::toJsonArray() const {
 //-------------------------------------Point 3D END--------------------------------//
 
 
+Cuboid::Cuboid() { }
+
+Cuboid::Cuboid(Point3D topLeft, Point3D bottomRight):_topLeft(topLeft), _bottomRight(bottomRight) {}
+
 Cuboid Cuboid::normalized() const {
     Point3D newTopLeft(_topLeft), newBottomRight(_bottomRight);
     if (newTopLeft.x > newBottomRight.x) std::swap(newTopLeft.x, newBottomRight.x);
     if (newTopLeft.y > newBottomRight.y) std::swap(newTopLeft.y, newBottomRight.y);
     if (newTopLeft.z > newBottomRight.z) std::swap(newTopLeft.z, newBottomRight.z);
     return Cuboid(newTopLeft, newBottomRight);
+}
+
+bool Cuboid::contains(Point3D pos) const {
+    return minX()<=pos.x && pos.x<=maxX() &&
+            minY()<=pos.y && pos.y<=maxY() &&
+            minZ()<=pos.z && pos.z<=maxZ();
 }
 
 void Cuboid::fromJsonArray(const QJsonArray &array)

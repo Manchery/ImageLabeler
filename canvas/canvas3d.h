@@ -11,6 +11,7 @@
 class Canvas3D : public CanvasBase
 {
     Q_OBJECT
+    friend ChildCanvas3D;
 public:
     explicit Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent=nullptr);
 
@@ -25,8 +26,20 @@ public:
     void keyReleaseEvent(QKeyEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
 
+    ChildCanvas3D* childDrawingRect() const {
+        if (canvasX->drawingRect()) return canvasX;
+        if (canvasY->drawingRect()) return canvasY;
+        if (canvasZ->drawingRect()) return canvasZ;
+        return nullptr;
+    }
+
+    int sizeX() const { return imagesZ[0].width(); }
+    int sizeY() const { return imagesZ[0].height(); }
+    int sizeZ() const { return imagesZ.length(); }
+
 signals:
     void focusMoved(Point3D focusPos);
+    void newCubeAnnotated(Cuboid cube);
 
 public slots:
     /*--------------------from CanvasBase (parent class)-------------------*/
@@ -36,7 +49,7 @@ public slots:
     void setScale(qreal newScale) override;
     /*--------------------from CanvasBase (parent class) END----------------*/
 
-//    void imagesZChanged();
+    void setFocusPos(Point3D pos) { focusPos = pos; update(); }
 private:
     QGridLayout *layout;
     ChildCanvas3D *canvasZ, *canvasX, *canvasY;

@@ -38,6 +38,7 @@ public slots:
 
     void getNewRect(QRect rect);
     void getNewStrokes(const QList<SegStroke> &strokes);
+    void getNewCube(Cuboid cube);
 
     void newLabelRequest(QString newLabel);
     void removeLabelRequest(QString label);
@@ -96,6 +97,8 @@ private:
     void _setupLabelManager();
     void _setupAnnotationContainer();
     void _setupFileManager();
+
+    QString _labelRequest();
 
 };
 
