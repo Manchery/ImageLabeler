@@ -19,6 +19,7 @@ QString RectAnnotationItem::toStr(){
 }
 
 QJsonObject RectAnnotationItem::toJsonObject(){
+    QJsonObject json = AnnotationItem::toJsonObject();
     QJsonArray points, point1, point2;
     point1.append(rect.topLeft().x());
     point1.append(rect.topLeft().y());
@@ -26,14 +27,12 @@ QJsonObject RectAnnotationItem::toJsonObject(){
     point2.append(rect.bottomRight().y());
     points.append(point1);
     points.append(point2);
-    QJsonObject json;
     json.insert("points", points);
-    json.insert("label", label);
-    json.insert("id", id);
     return json;
 }
 
 void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
+    AnnotationItem::fromJsonObject(json);
     if (json.contains("points")){
         QJsonValue value = json.value("points");
         if (value.isArray()){
@@ -56,18 +55,5 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
             }
         }
     }
-    if (json.contains("label")){
-        QJsonValue value = json.value("label");
-        if (value.isString()){
-            label = value.toString();
-            qDebug()<<"label: "<<label;
-        }
-    }
-    if (json.contains("id")){
-        QJsonValue value = json.value("id");
-        if (value.isDouble()){
-            id = static_cast<int>(value.toDouble());
-            qDebug()<<"id: "<<id;
-        }
-    }
+
 }

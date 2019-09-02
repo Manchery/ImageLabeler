@@ -1,7 +1,7 @@
 #ifndef LABELDIALOG_H
 #define LABELDIALOG_H
 
-#include "labellineedit.h"
+#include "widgets/labellineedit.h"
 #include "labelmanager.h"
 #include <QDialog>
 #include <QLineEdit>

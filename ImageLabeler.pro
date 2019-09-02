@@ -24,45 +24,44 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++14
 
+INCLUDEPATH = widgets canvas annotations
+
 SOURCES += \
         annotationcontainer.cpp \
-        annotationitem.cpp \
-        canvas.cpp \
-        canvas3d.cpp \
-        childcanvas3d.cpp \
+        annotations/annotationitem.cpp \
+        annotations/rectannotationitem.cpp \
+        annotations/segannotationitem.cpp \
+        canvas/canvas.cpp \
+        canvas/canvas3d.cpp \
+        canvas/childcanvas3d.cpp \
         filemanager.cpp \
-        labeldialog.cpp \
-        labellineedit.cpp \
-        labellistwidget.cpp \
         labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
-        mainwindowtest.cpp \
-        rectannotationitem.cpp \
-        segannotationitem.cpp \
-        utils.cpp
+        utils.cpp \
+        widgets/labeldialog.cpp \
+        widgets/labellineedit.cpp \
+        widgets/labellistwidget.cpp
 
 HEADERS += \
         annotationcontainer.h \
-        annotationitem.h \
-        canvas.h \
-        canvas3d.h \
-        childcanvas3d.h \
+        annotations/annotationitem.h \
+        annotations/rectannotationitem.h \
+        annotations/segannotationitem.h \
+        canvas/canvas.h \
+        canvas/canvas3d.h \
+        canvas/childcanvas3d.h \
         filemanager.h \
-        labeldialog.h \
-        labellineedit.h \
-        labellistwidget.h \
         labelmanager.h \
         mainwindow.h \
-        mainwindowtest.h \
-        rectannotationitem.h \
-        segannotationitem.h \
-        utils.h
+        utils.h \
+        widgets/labeldialog.h \
+        widgets/labellineedit.h \
+        widgets/labellistwidget.h
 
 FORMS += \
-        labeldialog.ui \
         mainwindow.ui \
-        mainwindowtest.ui
+        widgets/labeldialog.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

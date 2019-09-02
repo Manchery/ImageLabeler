@@ -88,9 +88,7 @@ QString SegAnnotationItem::toStr(){
 }
 
 QJsonObject SegAnnotationItem::toJsonObject(){
-    QJsonObject json;
-    json.insert("label", label);
-    json.insert("id", id);
+    QJsonObject json = AnnotationItem::toJsonObject();
     QJsonArray array;
     for (auto stroke: strokes){
         array.append(stroke.toJsonObject());
@@ -100,20 +98,7 @@ QJsonObject SegAnnotationItem::toJsonObject(){
 }
 
 void SegAnnotationItem::fromJsonObject(const QJsonObject &json){
-    if (json.contains("label")){
-        QJsonValue value = json.value("label");
-        if (value.isString()){
-            label = value.toString();
-            qDebug()<<"label: "<<label;
-        }
-    }
-    if (json.contains("id")){
-        QJsonValue value = json.value("id");
-        if (value.isDouble()){
-            id = static_cast<int>(value.toDouble());
-            qDebug()<<"id: "<<id;
-        }
-    }
+    AnnotationItem::fromJsonObject(json);
     if (json.contains("strokes")){
         QJsonValue value = json.value("strokes");
         if (value.isArray()){

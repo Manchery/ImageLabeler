@@ -16,8 +16,8 @@ public:
     AnnotationItem(QString label, int id);
     virtual ~AnnotationItem();
     virtual QString toStr()=0;
-    virtual QJsonObject toJsonObject()=0;
-    virtual void fromJsonObject(const QJsonObject &json)=0;
+    virtual QJsonObject toJsonObject();
+    virtual void fromJsonObject(const QJsonObject &json);
 };
 
 #endif // ANNOTATIONITEM_H
