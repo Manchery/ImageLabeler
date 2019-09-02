@@ -32,8 +32,9 @@ SOURCES += \
         annotations/cubeannotationitem.cpp \
         annotations/rectannotationitem.cpp \
         annotations/segannotationitem.cpp \
-        canvas/canvas.cpp \
+        canvas/canvas2d.cpp \
         canvas/canvas3d.cpp \
+        canvas/canvasbase.cpp \
         canvas/childcanvas3d.cpp \
         filemanager.cpp \
         labelmanager.cpp \
@@ -50,8 +51,9 @@ HEADERS += \
         annotations/cubeannotationitem.h \
         annotations/rectannotationitem.h \
         annotations/segannotationitem.h \
-        canvas/canvas.h \
+        canvas/canvas2d.h \
         canvas/canvas3d.h \
+        canvas/canvasbase.h \
         canvas/childcanvas3d.h \
         filemanager.h \
         labelmanager.h \

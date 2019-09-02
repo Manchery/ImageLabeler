@@ -5,11 +5,8 @@
 #include <QPainter>
 
 Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent):
-    QWidget(parent),
-    pAnnoContainer(pAnnoContainer),
-    pLabelManager(pLabelManager)
+    CanvasBase (pLabelManager, pAnnoContainer, parent)
 {
-    scale = 1.0;
     mouseX = mouseY = mouseZ = 0;
 
     //! layout
@@ -37,11 +34,6 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
         mouseX = pos.x(); mouseY = pos.y();
         _syncMousePos();
     });
-}
-
-QSize Canvas3D::sizeHint() const
-{
-    return minimumSizeHint();
 }
 
 QSize Canvas3D::minimumSizeHint() const
@@ -108,7 +100,6 @@ QImage Canvas3D::getXSlides(const QList<QImage> &_imageZ, int x)
     return image;
 }
 
-
 void Canvas3D::changeTask(TaskMode _task) {
     switch(_task){
     case DETECTION3D:
@@ -118,9 +109,16 @@ void Canvas3D::changeTask(TaskMode _task) {
         task = TaskMode::SEGMENTATION3D;
         break;
     default:
-        break;
+        throw "abnormal 2d task set to canvas 3d";
     }
-//    emit modeChanged(modeString());
+    emit modeChanged(modeString());
+}
+
+void Canvas3D::changeCanvasMode(CanvasMode _mode)
+{
+    if (mode == _mode) return;
+    mode = _mode;
+    emit modeChanged(modeString());
 }
 
 void Canvas3D::changeDrawMode(DrawMode _draw)
@@ -136,5 +134,6 @@ void Canvas3D::changeDrawMode(DrawMode _draw)
     case POLYGEN:
         break;
     }
-//    emit modeChanged(modeString());
+    emit modeChanged(modeString());
 }
+

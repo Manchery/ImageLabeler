@@ -1,4 +1,4 @@
-#include "canvas.h"
+#include "canvas2d.h"
 #include "segannotationitem.h"
 #include "rectannotationitem.h"
 #include "utils.h"
@@ -7,19 +7,16 @@
 #include <QtDebug>
 #include <algorithm>
 
-Canvas::Canvas(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
-    QWidget(parent),
-    pixmap(),
-    pAnnoContainer(pAnnoContainer),
-    pLabelManager(pLabelManager),
-    scale(1.0)
+Canvas2d::Canvas2d(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
+    CanvasBase (pLabelManager, pAnnoContainer, parent),
+    pixmap()
 {
     lastPenWidth=DEFAULT_PEN_WIDTH;
     mousePos=QPoint(0,0);
     setMouseTracking(true);
 }
 
-void Canvas::paintEvent(QPaintEvent *event)
+void Canvas2d::paintEvent(QPaintEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::paintEvent(event);
@@ -161,7 +158,7 @@ void Canvas::paintEvent(QPaintEvent *event)
     }
 }
 
-void Canvas::mousePressEvent(QMouseEvent *event)
+void Canvas2d::mousePressEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mousePressEvent(event);
@@ -269,7 +266,7 @@ void Canvas::mousePressEvent(QMouseEvent *event)
     setFocus();
 }
 
-void Canvas::mouseMoveEvent(QMouseEvent *event)
+void Canvas2d::mouseMoveEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mouseMoveEvent(event);
@@ -327,7 +324,7 @@ void Canvas::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void Canvas::mouseReleaseEvent(QMouseEvent *event){
+void Canvas2d::mouseReleaseEvent(QMouseEvent *event){
     if (pixmap.isNull()){
         QWidget::mouseReleaseEvent(event);
         return;
@@ -350,7 +347,7 @@ void Canvas::mouseReleaseEvent(QMouseEvent *event){
     }
 }
 
-void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
+void Canvas2d::mouseDoubleClickEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
         QWidget::mouseDoubleClickEvent(event);
@@ -366,7 +363,7 @@ void Canvas::mouseDoubleClickEvent(QMouseEvent *event)
         }
 }
 
-void Canvas::keyPressEvent(QKeyEvent *event)
+void Canvas2d::keyPressEvent(QKeyEvent *event)
 {
     if (task == SEGMENTATION){
         if (mode == DRAW){
@@ -386,45 +383,17 @@ void Canvas::keyPressEvent(QKeyEvent *event)
     QWidget::keyPressEvent(event);
 }
 
-QString Canvas::modeString() const {
-    QString modeStr("");
-
+void Canvas2d::changeTask(TaskMode _task) {
+    if (task == _task) return;
+    task = _task;
     switch(task){
-    case DETECTION:  modeStr+="Detection"; break;
-    case SEGMENTATION: modeStr+="Segmentation"; break;
-    default: modeStr+="Unknown task"; break;
-    }
-
-    switch (mode) {
-    case DRAW: modeStr+=", Draw"; break;
-    case SELECT: modeStr+=", Select"; break;
-//    default: modeStr+="Unknown mode"; break;
-    }
-
-    if (mode==DRAW){
-        switch (drawMode) {
-        case RECTANGLE: modeStr+=", Rectangle"; break;
-        case CONTOUR: modeStr+=", Contour"; break;
-        case SQUAREPEN: modeStr+=", Square Pen"; break;
-        case CIRCLEPEN: modeStr+=", Circle Pen"; break;
-        case POLYGEN: modeStr+=", Polygen Contour"; break;
-//        default: modeStr+="Unknown mode"; break;
-        }
-    }
-    return modeStr;
-}
-
-void Canvas::changeTask(TaskMode _task) {
-    switch(_task){
     case DETECTION:
-        task = TaskMode::DETECTION;
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::RECTANGLE;
         editing=false;
         strokeDrawing=false;
         break;
     case SEGMENTATION:
-        task = TaskMode::SEGMENTATION;
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::POLYGEN;
         editing = false;
@@ -432,12 +401,21 @@ void Canvas::changeTask(TaskMode _task) {
         strokeDrawing=false;
         break;
     default:
-        break;
+        throw "abnormal 3d task set to canvas 2d";
     }
     emit modeChanged(modeString());
 }
 
-void Canvas::changeDrawMode(DrawMode _draw)
+void Canvas2d::changeCanvasMode(CanvasMode _mode)
+{
+    if (mode == _mode) return;
+    if (_mode == MOVE)
+        throw "abnormal move mode set to canvas 2d";
+    mode = _mode;
+    emit modeChanged(modeString());
+}
+
+void Canvas2d::changeDrawMode(DrawMode _draw)
 {
     drawMode=_draw;
     switch (drawMode) {
@@ -465,30 +443,21 @@ void Canvas::changeDrawMode(DrawMode _draw)
     emit modeChanged(modeString());
 }
 
-void Canvas::loadPixmap(QPixmap new_pixmap)
+void Canvas2d::loadPixmap(QPixmap new_pixmap)
 {
     pixmap = new_pixmap;
     adjustSize();
     update();
 }
 
-void Canvas::setScale(qreal new_scale)
+void Canvas2d::setScale(qreal new_scale)
 {
     scale = new_scale;
     adjustSize();
     update();
 }
 
-void Canvas::changeCanvasModeRequest(){
-    if (pAnnoContainer->getSelectedIdx()==-1)
-        mode = DRAW;
-    else {
-        mode = SELECT;
-    }
-    emit modeChanged(modeString());
-}
-
-QPoint Canvas::offsetToCenter()
+QPoint Canvas2d::offsetToCenter()
 {
     qreal s = scale;
     int w = int(pixmap.width() * s), h=int(pixmap.height() * s);
@@ -498,23 +467,14 @@ QPoint Canvas::offsetToCenter()
     return QPoint(x,y);
 }
 
-QSize Canvas::sizeHint() const
-{
-    return minimumSizeHint();
-}
-
-QSize Canvas::minimumSizeHint() const
+QSize Canvas2d::minimumSizeHint() const
 {
     if (!pixmap.isNull())
         return scale * pixmap.size();
     return QWidget::minimumSizeHint();
 }
 
-qreal Canvas::getScale() const { return scale; }
-
-const QPixmap &Canvas::getPixmap() const { return pixmap; }
-
-int Canvas::selectShape(QPoint pos)
+int Canvas2d::selectShape(QPoint pos)
 {
     if (task==DETECTION){
         for (int i=pAnnoContainer->length()-1;i>=0;i--){
@@ -531,12 +491,12 @@ int Canvas::selectShape(QPoint pos)
     return -1;
 }
 
-QPoint Canvas::pixelPos(QPoint pos)
+QPoint Canvas2d::pixelPos(QPoint pos)
 {
     return pos / scale - offsetToCenter();
 }
 
-QPoint Canvas::boundedPixelPos(QPoint pos)
+QPoint Canvas2d::boundedPixelPos(QPoint pos)
 {
     pos = pos / scale - offsetToCenter();
     pos.setX(std::min(std::max(pos.x(), 0), pixmap.width()-1));
@@ -544,7 +504,7 @@ QPoint Canvas::boundedPixelPos(QPoint pos)
     return pos;
 }
 
-bool Canvas::outOfPixmap(QPoint pos)
+bool Canvas2d::outOfPixmap(QPoint pos)
 {
     int w = pixmap.width(), h= pixmap.height();
     return !(0<=pos.x() && pos.x()<w && 0<=pos.y() && pos.y()<h);

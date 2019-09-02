@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "canvas.h"
+#include "canvas2d.h"
 #include "canvas3d.h"
 #include "labeldialog.h"
 #include "labelmanager.h"
@@ -73,7 +73,8 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Canvas *canvas;
+    CanvasBase *curCanvas;
+    Canvas2d *canvas2d;
     Canvas3D *canvas3d;
 
     LabelManager labelManager;

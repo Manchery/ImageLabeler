@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "labeldialog.h"
-#include "canvas.h"
+#include "canvas2d.h"
 #include "utils.h"
 #include "rectannotationitem.h"
 #include <QLabel>
@@ -27,18 +27,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    canvas = new Canvas(&labelManager, &annoContainer, ui->scrollArea);
-    canvas->setVisible(true);
+    canvas2d = new Canvas2d(&labelManager, &annoContainer, ui->scrollArea);
+    canvas2d->setVisible(true); canvas2d->setEnabled(true);
+    curCanvas = canvas2d;
 
     canvas3d = new Canvas3D(&labelManager, &annoContainer, ui->scrollArea);
-    canvas3d->setVisible(false);
+    canvas3d->setVisible(false); canvas3d->setEnabled(false);
 
     ui->scrollArea->setAlignment(Qt::AlignCenter);
-    ui->scrollArea->setWidget(canvas);
+    ui->scrollArea->setWidget(canvas2d);
 //    ui->scrollArea->setWidgetResizable(true);
-    canvas->setEnabled(true);
 
-    connect(canvas, &Canvas::modeChanged, this, &MainWindow::reportCanvasMode);
+    connect(canvas2d, &Canvas2d::modeChanged, this, &MainWindow::reportCanvasMode);
 
     _setupToolBarAndStatusBar();
 
@@ -48,8 +48,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _setupFileManager();
 
-    connect(canvas, &Canvas::mouseMoved, this, &MainWindow::reportMouseMoved);
-    connect(canvas, &Canvas::zoomRequest, this, &MainWindow::zoomRequest);
+    connect(canvas2d, &Canvas2d::mouseMoved, this, &MainWindow::reportMouseMoved);
+    connect(canvas2d, &Canvas2d::zoomRequest, this, &MainWindow::zoomRequest);
     connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
 }
 
@@ -76,11 +76,11 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox->setEnabled(false); // because the defalut mode is detection
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
 
-    canvas->changeTask(DETECTION);
+    canvas2d->changeTask(DETECTION);
 
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
-    connect(penWidthBox, SIGNAL(valueChanged(int)), canvas, SLOT(setPenWidth(int)));
+    connect(penWidthBox, SIGNAL(valueChanged(int)), canvas2d, SLOT(setPenWidth(int)));
 
     unableFileActions();
 
@@ -109,7 +109,7 @@ void MainWindow::_setupLabelManager()
             });
 
     // label changed -> canvas repaint (TODO: 2d or 3d
-    connect(&labelManager, &LabelManager::configChanged, canvas, qOverload<>(&QWidget::update));
+    connect(&labelManager, &LabelManager::configChanged, canvas2d, qOverload<>(&QWidget::update));
 
     // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
@@ -148,10 +148,11 @@ void MainWindow::_setupAnnotationContainer()
         auto items = ui->annoListWidget->selectedItems();
         if (items.length()==0){
             annoContainer.setSelected(-1);
+            curCanvas->changeCanvasMode(DRAW);
         }else{
             annoContainer.setSelected(ui->annoListWidget->row(items[0]));
+            curCanvas->changeCanvasMode(SELECT);
         }
-        canvas->changeCanvasModeRequest();
     });
 
     // right click menu for anno : delete
@@ -170,12 +171,12 @@ void MainWindow::_setupAnnotationContainer()
     connect(ui->actionRedo, &QAction::triggered, &annoContainer, &AnnotationContainer::redo);
 
     // request from canvas
-    connect(canvas, &Canvas::newRectangleAnnotated, this, &MainWindow::getNewRect);
-    connect(canvas, &Canvas::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
+    connect(canvas2d, &Canvas2d::newRectangleAnnotated, this, &MainWindow::getNewRect);
+    connect(canvas2d, &Canvas2d::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
 
     // request from canvas only for bbox, not segmentation (TODO 3d
-    connect(canvas, &Canvas::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
-    connect(canvas, &Canvas::modifySelectedRectRequest, [this](int idx, QRect rect){
+    connect(canvas2d, &Canvas2d::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
+    connect(canvas2d, &Canvas2d::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
                 std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->label,
                                                      annoContainer.getSelectedItem()->id);
@@ -183,7 +184,7 @@ void MainWindow::_setupAnnotationContainer()
     });
 
     // anno changed: canvas repaint (TODO: 2d or 3d
-    connect(&annoContainer, &AnnotationContainer::dataChanged, canvas, qOverload<>(&QWidget::update));
+    connect(&annoContainer, &AnnotationContainer::dataChanged, canvas2d, qOverload<>(&QWidget::update));
 
     // anno changed: ui list changed
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
@@ -247,22 +248,20 @@ void MainWindow::taskModeChanged()
 
     if (text.startsWith("3D")){
         ui->actionOpen_File->setEnabled(false);
-        canvas->setVisible(false);
-        canvas3d->setVisible(true);
-
-        ui->scrollArea->takeWidget();
-        ui->scrollArea->setWidget(canvas3d);
+        curCanvas = canvas3d;
+        canvas2d->setVisible(false); canvas2d->setEnabled(false);
+        canvas3d->setVisible(true); canvas3d->setEnabled(true);
     }else{
         ui->actionOpen_File->setEnabled(true);
-        canvas->setVisible(true);
-        canvas3d->setVisible(false);
-
-        ui->scrollArea->takeWidget();
-        ui->scrollArea->setWidget(canvas);
+        curCanvas = canvas2d;
+        canvas2d->setVisible(true); canvas2d->setEnabled(true);
+        canvas3d->setVisible(false); canvas3d->setEnabled(false);
     }
+    ui->scrollArea->takeWidget();
+    ui->scrollArea->setWidget(curCanvas);
 
-    if (text == "Detection ") canvas->changeTask(DETECTION);
-    if (text == "Segmentation ") canvas->changeTask(SEGMENTATION);
+    if (text == "Detection ") canvas2d->changeTask(DETECTION);
+    if (text == "Segmentation ") canvas2d->changeTask(SEGMENTATION);
     if (text == "3D Detection ") canvas3d->changeTask(DETECTION3D);
     if (text == "3D Segmentation ") canvas3d->changeTask(SEGMENTATION3D);
 
@@ -286,26 +285,18 @@ void MainWindow::drawModeChanged()
 {
     QString text = drawComboBox->currentText();
 
-    if (!taskComboBox->currentText().startsWith("3D")){
-        if (text=="Rectangle") canvas->changeDrawMode(RECTANGLE);
-        if (text=="Circle Pen") canvas->changeDrawMode(CIRCLEPEN);
-        if (text=="Square Pen") canvas->changeDrawMode(SQUAREPEN);
-        if (text=="Contour") canvas->changeDrawMode(CONTOUR);
-        if (text=="Polygonal Contour") canvas->changeDrawMode(POLYGEN);
-    }else{
-        if (text=="Rectangle") canvas3d->changeDrawMode(RECTANGLE);
-        if (text=="Circle Pen") canvas3d->changeDrawMode(CIRCLEPEN);
-        if (text=="Square Pen") canvas3d->changeDrawMode(SQUAREPEN);
-        if (text=="Contour") canvas3d->changeDrawMode(CONTOUR);
-        if (text=="Polygonal Contour") canvas3d->changeDrawMode(POLYGEN);
-    }
+    if (text=="Rectangle") curCanvas->changeDrawMode(RECTANGLE);
+    if (text=="Circle Pen") curCanvas->changeDrawMode(CIRCLEPEN);
+    if (text=="Square Pen") curCanvas->changeDrawMode(SQUAREPEN);
+    if (text=="Contour") curCanvas->changeDrawMode(CONTOUR);
+    if (text=="Polygonal Contour") curCanvas->changeDrawMode(POLYGEN);
 
     if (text=="Rectangle"||text=="Contour"||text=="Polygonal Contour"){
         penWidthBox->setEnabled(false);
         penWidthBox->setValue(1);
     }else if (text=="Circle Pen"||text=="Square Pen"){
         penWidthBox->setEnabled(true);
-        penWidthBox->setValue(canvas->getLastPenWidth());
+        penWidthBox->setValue(canvas2d->getLastPenWidth());
     }
 }
 
@@ -427,8 +418,8 @@ QString MainWindow::getCurrentLabel()
 
 void MainWindow::keyPressEvent(QKeyEvent *event){
     if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter)
-        if (canvas->getTaskMode()==SEGMENTATION && canvas->getCanvasMode()==DRAW){
-            canvas->keyPressEvent(event);
+        if (canvas2d->getTaskMode()==SEGMENTATION && canvas2d->getCanvasMode()==DRAW){
+            canvas2d->keyPressEvent(event);
             return;
         }
     QMainWindow::keyPressEvent(event);
@@ -442,15 +433,15 @@ void MainWindow::on_actionOpen_File_triggered()
     QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
                                                     "Image Files (*.jpg *.png);;JPEG Files (*.jpg);;PNG Files (*.png)");
     if (!fileName.isNull() && !fileName.isEmpty()){
-        canvas->loadPixmap(fileName);
+        canvas2d->loadPixmap(fileName);
         adjustFitWindow();
 
         labelManager.allClear();
         annoContainer.allClear();
 
-        if (canvas->getTaskMode()==DETECTION){
+        if (canvas2d->getTaskMode()==DETECTION){
             fileManager.setAll(fileName, "_detect_labels_annotations.json");
-        }else if (canvas->getTaskMode()==SEGMENTATION){
+        }else if (canvas2d->getTaskMode()==SEGMENTATION){
             fileManager.setAll(fileName, "_segment_labels_annotations.json");
         }
 
@@ -483,12 +474,12 @@ void MainWindow::on_actionOpen_Dir_triggered()
         annoContainer.allClear();
 
         if (taskComboBox->currentText()=="Detection "){
-            canvas->loadPixmap(images[0]);
+            canvas2d->loadPixmap(images[0]);
             adjustFitWindow();
             fileManager.setAll(images, "_detect_annotations.json");
 
         }else if (taskComboBox->currentText()=="Segmentation "){
-            canvas->loadPixmap(images[0]);
+            canvas2d->loadPixmap(images[0]);
             adjustFitWindow();
             fileManager.setAll(images, "_segment_annotations.json");
 
@@ -531,7 +522,7 @@ bool MainWindow::switchFile(int idx)
     _loadJsonFile(fileManager.getCurrentOutputFile());
     fileManager.resetChangeNotSaved();
 
-    canvas->loadPixmap(fileManager.getCurrentImageFile());
+    canvas2d->loadPixmap(fileManager.getCurrentImageFile());
     adjustFitWindow();
 
     ui->fileListWidget->item(idx)->setSelected(true);
@@ -555,7 +546,7 @@ void MainWindow::on_actionClose_triggered()
     if (!_checkUnsaved()) return;
 
     if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
-        canvas->loadPixmap(QPixmap());
+        canvas2d->loadPixmap(QPixmap());
         labelManager.allClear();
         annoContainer.allClear();
     }
@@ -566,24 +557,24 @@ void MainWindow::on_actionClose_triggered()
 
 void MainWindow::_saveSegmentImageResults(QString oldSuffix)
 {
-    QImage colorImage = drawColorImage(canvas->getPixmap().size(), &annoContainer, &labelManager);
+    QImage colorImage = drawColorImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
     QString colorImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "color.png");
     colorImage.save(colorImagePath);
-    QImage labelIdImage = drawLabelIdImage(canvas->getPixmap().size(), &annoContainer, &labelManager);
+    QImage labelIdImage = drawLabelIdImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
     QString labelIdImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "labelId.png");
     labelIdImage.save(labelIdImagePath);
 }
 
 void MainWindow::on_actionSave_triggered()
 {
-    if (canvas->getTaskMode()==DETECTION || canvas->getTaskMode()==SEGMENTATION){
+    if (canvas2d->getTaskMode()==DETECTION || canvas2d->getTaskMode()==SEGMENTATION){
         if (fileManager.getMode()==SingleImage){
             QJsonObject json;
             json.insert("labels", labelManager.toJsonArray());
             json.insert("annotations", annoContainer.toJsonArray());
             FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
-            if (canvas->getTaskMode()==SEGMENTATION)
+            if (canvas2d->getTaskMode()==SEGMENTATION)
                 _saveSegmentImageResults("labels_annotations.json");
 
             fileManager.resetChangeNotSaved();
@@ -596,7 +587,7 @@ void MainWindow::on_actionSave_triggered()
             annoJson.insert("annotations", annoContainer.toJsonArray());
             FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
 
-            if (canvas->getTaskMode()==SEGMENTATION)
+            if (canvas2d->getTaskMode()==SEGMENTATION)
                 _saveSegmentImageResults("annotations.json");
 
             fileManager.resetChangeNotSaved();
@@ -618,20 +609,12 @@ void MainWindow::on_actionSave_As_triggered()
 
 void MainWindow::on_actionZoom_in_triggered()
 {
-    if (!taskComboBox->currentText().startsWith("3D")){
-        canvas->setScale(canvas->getScale()*1.1);
-    }else{
-        canvas3d->setScale(canvas3d->getScale()*1.1);
-    }
+    curCanvas->setScale(curCanvas->getScale()*1.1);
 }
 
 void MainWindow::on_actionZoom_out_triggered()
 {
-    if (!taskComboBox->currentText().startsWith("3D")){
-        canvas->setScale(canvas->getScale()*0.9);
-    }else{
-        canvas3d->setScale(canvas3d->getScale()*0.9);
-    }
+    curCanvas->setScale(curCanvas->getScale()*0.9);
 }
 
 qreal MainWindow::scaleFitWindow()
@@ -639,17 +622,11 @@ qreal MainWindow::scaleFitWindow()
     int w1 = ui->scrollArea->width() - 2; // So that no scrollbars are generated.
     int h1 = ui->scrollArea->height() - 2;
     qreal a1 = static_cast<qreal>(w1)/h1;
-    if (!taskComboBox->currentText().startsWith("3D")){
-        int w2 = canvas->getPixmap().width();
-        int h2 = canvas->getPixmap().height();
-        qreal a2 = static_cast<qreal>(w2)/h2;
-        return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
-    }else{
-        int w2 = canvas3d->sizeUnscaled().width();
-        int h2 = canvas3d->sizeUnscaled().height();
-        qreal a2 = static_cast<qreal>(w2)/h2;
-        return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
-    }
+    int w2 = curCanvas->sizeUnscaled().width();
+    int h2 = curCanvas->sizeUnscaled().height();
+    qreal a2 = static_cast<qreal>(w2)/h2;
+    return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
+
 }
 
 void MainWindow::enableFileActions()
@@ -672,22 +649,18 @@ void MainWindow::unableFileActions()
 
 void MainWindow::adjustFitWindow()
 {
-    if (!taskComboBox->currentText().startsWith("3D")){
-        canvas->setScale(scaleFitWindow());
-    }else{
-        canvas3d->setScale(scaleFitWindow());
-    }
+    curCanvas->setScale(scaleFitWindow());
 }
 
 void MainWindow::zoomRequest(qreal delta, QPoint pos)
 {
-    int oldWidth = canvas->width();
+    int oldWidth = canvas2d->width();
     if (delta>0){
-        canvas->setScale(canvas->getScale()*1.1);
+        canvas2d->setScale(canvas2d->getScale()*1.1);
     } else {
-        canvas->setScale(canvas->getScale()*0.9);
+        canvas2d->setScale(canvas2d->getScale()*0.9);
     }
-    int newWidth = canvas->width();
+    int newWidth = canvas2d->width();
     if (newWidth!=oldWidth){
         qreal scale = static_cast<qreal>(newWidth) / oldWidth;
         int xShift = static_cast<int>(round(pos.x() * scale)) - pos.x();
