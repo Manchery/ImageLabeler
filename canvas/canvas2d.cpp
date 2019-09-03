@@ -296,8 +296,10 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
         if (mode == DRAW){
             if (drawMode!=POLYGEN){
                 if (strokeDrawing){
-                    curStrokes.back().points.push_back(pixPos);
-                    update();
+                    if (curStrokes.back().points.length()==0 || curStrokes.back().points.back()!=pixPos){
+                        curStrokes.back().points.push_back(pixPos);
+                        update();
+                    }
                 }
                 if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
                     update(); // track pen pos;

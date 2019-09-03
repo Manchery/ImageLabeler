@@ -284,8 +284,10 @@ void ChildCanvas3D::mouseMoveEvent(QMouseEvent *event)
             DrawMode drawMode = parentCanvas->drawMode;
             if (drawMode!=POLYGEN){
                 if (strokeDrawing){
-                    curStroke.points.push_back(pixPos);
-                    update();
+                    if (curStroke.points.length()==0 || curStroke.points.back()!=pixPos){
+                        curStroke.points.push_back(pixPos);
+                        update();
+                    }
                 }
                 if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
                     update(); // track pen pos;

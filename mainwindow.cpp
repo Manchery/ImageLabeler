@@ -691,7 +691,14 @@ void MainWindow::on_actionSave_triggered()
             json.insert("annotations", annoContainer.toJsonArray());
             FileManager::saveJson(json, fileManager.getCurrentOutputFile());
         }else if (canvas3d->getTaskMode() == SEGMENTATION3D){
+            QJsonObject json;
+            json.insert("labels", labelManager.toJsonArray());
+            json.insert("annotations", annoContainer.toJsonArray());
+            FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
+            if (canvas3d->getTaskMode()==SEGMENTATION3D){
+                // image result
+            }
         }
     }
     fileManager.resetChangeNotSaved();

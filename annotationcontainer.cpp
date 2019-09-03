@@ -137,6 +137,10 @@ void AnnotationContainer::fromJsonArray(QJsonArray json, TaskMode task)
                 shared_ptr<CubeAnnotationItem> item = std::make_shared<CubeAnnotationItem>();
                 item->fromJsonObject(value.toObject());
                 this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+            }else if (task == SEGMENTATION3D){
+                shared_ptr<Seg3DAnnotationItem> item = std::make_shared<Seg3DAnnotationItem>();
+                item->fromJsonObject(value.toObject());
+                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
             }
         }
     }
