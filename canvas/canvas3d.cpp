@@ -1,4 +1,5 @@
 #include "canvas3d.h"
+#include "annotationcontainer.h"
 #include <QGridLayout>
 #include <QPixmap>
 #include <QtDebug>
@@ -126,6 +127,13 @@ void Canvas3D::mouseReleasedWhenSelected()
 {
     editing = false;
     emit modifySelectedCubeRequest(pAnnoContainer->getSelectedIdx(), editingCube.normalized());
+}
+
+void Canvas3D::close(){
+    imagesZ.clear();
+    canvasX->loadImage(QImage());
+    canvasY->loadImage(QImage());
+    canvasZ->loadImage(QImage());
 }
 
 QSize Canvas3D::minimumSizeHint() const

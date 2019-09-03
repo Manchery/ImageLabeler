@@ -1,9 +1,7 @@
 #ifndef CANVASBASE_H
 #define CANVASBASE_H
 
-#include "annotationcontainer.h"
 #include "segannotationitem.h"
-#include "labelmanager.h"
 #include <QObject>
 #include <QWidget>
 
@@ -17,6 +15,9 @@ enum DrawMode{
     RECTANGLE, //! for detection
     CONTOUR, SQUAREPEN, CIRCLEPEN, POLYGEN //! for segmentation
 };
+
+class AnnotationContainer;
+class LabelManager;
 
 class CanvasBase : public QWidget
 {

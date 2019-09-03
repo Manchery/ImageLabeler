@@ -18,6 +18,7 @@ public:
 
     static QString getDir(QString fileName);
     static QString getName(QString fileName);
+    static QString getNameWithExtension(QString fileName);
     static void saveJson(QJsonObject json, QString fileName);
     static QJsonObject readJson(QString fileName);
 

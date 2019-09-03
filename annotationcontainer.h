@@ -2,6 +2,7 @@
 #define ANNOTATIONCONTAINER_H
 
 #include "annotationitem.h"
+#include "canvasbase.h"
 #include <QObject>
 #include <QList>
 #include <QRect>
@@ -38,8 +39,8 @@ public:
     bool hasData(QString label);
 
     QJsonArray toJsonArray();
-    void fromJsonObject(QJsonObject json, QString format);
-    void fromJsonArray(QJsonArray json, QString format);
+    void fromJsonObject(QJsonObject json, TaskMode task);
+    void fromJsonArray(QJsonArray json, TaskMode task);
 
     int getSelectedIdx() const;
     AnnoItemPtr getSelectedItem() const;

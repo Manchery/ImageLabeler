@@ -243,17 +243,19 @@ void MainWindow::_setupFileManager()
         if (fileManager.getMode() == Close) return;
         ui->fileListWidget->clear();
         for (const QString &image: fileManager.allImageFiles()){
-            ui->fileListWidget->addItem(image);
+            ui->fileListWidget->addItem(FileManager::getNameWithExtension(image));
         }
         ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
     });
-    // click file item to switch image (TODO: 2d or 3d
+    // click file item to switch image
     connect(ui->fileListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item){
+        int idx = ui->fileListWidget->row(item);
         if (fileManager.getMode()==MultiImage){
-            int idx = ui->fileListWidget->row(item);
             if (!switchFile(idx)){
-                ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
+                ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true); // redundent?
             }
+        }else if (curCanvas==canvas3d){
+            switchFile(idx);
         }
     });
 }
@@ -544,31 +546,37 @@ void MainWindow::on_actionOpen_Dir_triggered()
 
 void MainWindow::on_actionLoad_triggered()
 {
-    if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
-        QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
-                                                         "Json Files (*.json)");
-        _loadJsonFile(fileName);
-    }
+    QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
+                                                     "Json Files (*.json)");
+    _loadJsonFile(fileName);
 }
 
 bool MainWindow::switchFile(int idx)
 {
-    if (!_checkUnsaved()) return false;
+    if (curCanvas == canvas2d){
+        if (!_checkUnsaved()) return false;
 
-    //! TODO: whether clear
-    labelManager.allClear();
-    annoContainer.allClear();
+        //! TODO: whether clear
+        labelManager.allClear();
+        annoContainer.allClear();
 
-    fileManager.selectFile(idx);
-    _loadJsonFile(fileManager.getLabelFile());
-    _loadJsonFile(fileManager.getCurrentOutputFile());
-    fileManager.resetChangeNotSaved();
+        fileManager.selectFile(idx);
+        _loadJsonFile(fileManager.getLabelFile());
+        _loadJsonFile(fileManager.getCurrentOutputFile());
+        fileManager.resetChangeNotSaved();
 
-    canvas2d->loadPixmap(fileManager.getCurrentImageFile());
-    adjustFitWindow();
+        canvas2d->loadPixmap(fileManager.getCurrentImageFile());
+        adjustFitWindow();
 
-    ui->fileListWidget->item(idx)->setSelected(true);
-    return true;
+        ui->fileListWidget->item(idx)->setSelected(true);
+        return true;
+    }else if (curCanvas == canvas3d){
+        fileManager.selectFile(idx);
+        ui->fileListWidget->item(idx)->setSelected(true);
+        Point3D focusPos = canvas3d->getFocusPos();
+        canvas3d->setFocusPos(Point3D(focusPos.x, focusPos.y, idx));
+        return true;
+    }
 }
 
 void MainWindow::on_actionPrevious_Image_triggered()
@@ -587,11 +595,13 @@ void MainWindow::on_actionClose_triggered()
 
     if (!_checkUnsaved()) return;
 
-    if (fileManager.getMode() == SingleImage || fileManager.getMode() == MultiImage){
+    if (curCanvas==canvas2d){
         canvas2d->loadPixmap(QPixmap());
-        labelManager.allClear();
-        annoContainer.allClear();
+    }else if (curCanvas == canvas3d){
+        canvas3d->close();
     }
+    labelManager.allClear();
+    annoContainer.allClear();
     fileManager.close();
     unableFileActions();
 }
@@ -609,7 +619,7 @@ void MainWindow::_saveSegmentImageResults(QString oldSuffix)
 
 void MainWindow::on_actionSave_triggered()
 {
-    if (canvas2d->getTaskMode()==DETECTION || canvas2d->getTaskMode()==SEGMENTATION){
+    if (curCanvas == canvas2d){ // 2D mode
         if (fileManager.getMode()==SingleImage){
             QJsonObject json;
             json.insert("labels", labelManager.toJsonArray());
@@ -618,8 +628,6 @@ void MainWindow::on_actionSave_triggered()
 
             if (canvas2d->getTaskMode()==SEGMENTATION)
                 _saveSegmentImageResults("labels_annotations.json");
-
-            fileManager.resetChangeNotSaved();
         }else if (fileManager.getMode()==MultiImage){
             QJsonObject labelJson;
             labelJson.insert("labels", labelManager.toJsonArray());
@@ -631,10 +639,18 @@ void MainWindow::on_actionSave_triggered()
 
             if (canvas2d->getTaskMode()==SEGMENTATION)
                 _saveSegmentImageResults("annotations.json");
+        }
+    }else if (curCanvas == canvas3d){
+        if (canvas3d->getTaskMode() == DETECTION3D){
+            QJsonObject json;
+            json.insert("labels", labelManager.toJsonArray());
+            json.insert("annotations", annoContainer.toJsonArray());
+            FileManager::saveJson(json, fileManager.getCurrentOutputFile());
+        }else if (canvas3d->getTaskMode() == SEGMENTATION3D){
 
-            fileManager.resetChangeNotSaved();
         }
     }
+    fileManager.resetChangeNotSaved();
 }
 
 void MainWindow::on_actionSave_As_triggered()
@@ -730,7 +746,7 @@ void MainWindow::_loadJsonFile(QString fileName)
     if (checkFile.exists() && checkFile.isFile()){
         QJsonObject json = FileManager::readJson(fileName);
         labelManager.fromJsonObject(json);
-        annoContainer.fromJsonObject(json, taskComboBox->currentText());
+        annoContainer.fromJsonObject(json, curCanvas->getTaskMode());
     }
 }
 

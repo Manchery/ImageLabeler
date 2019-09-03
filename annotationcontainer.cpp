@@ -1,6 +1,7 @@
 #include "annotationcontainer.h"
 #include "rectannotationitem.h"
 #include "segannotationitem.h"
+#include "cubeannotationitem.h"
 #include <QtDebug>
 using std::shared_ptr;
 
@@ -109,12 +110,12 @@ QJsonArray AnnotationContainer::toJsonArray(){
     return json;
 }
 
-void AnnotationContainer::fromJsonObject(QJsonObject json, QString format)
+void AnnotationContainer::fromJsonObject(QJsonObject json, TaskMode task)
 {
     if (json.contains("annotations")){
         QJsonValue value = json.value("annotations");
         if (value.isArray())
-            fromJsonArray(value.toArray(), format);
+            fromJsonArray(value.toArray(), task);
         else {
             throw "content <annotations> in json is not array";
         }
@@ -123,17 +124,21 @@ void AnnotationContainer::fromJsonObject(QJsonObject json, QString format)
     }
 }
 
-void AnnotationContainer::fromJsonArray(QJsonArray json, QString format)
+void AnnotationContainer::fromJsonArray(QJsonArray json, TaskMode task)
 {
     for (int i=0;i<json.size();i++){
         QJsonValue value = json.at(i);
         if (value.isObject()){
-            if (format == "Detection "){
+            if (task == DETECTION){
                 shared_ptr<RectAnnotationItem> item = std::make_shared<RectAnnotationItem>();
                 item->fromJsonObject(value.toObject());
                 this->push_back(std::static_pointer_cast<AnnotationItem>(item));
-            }else if (format == "Segmentation "){
+            }else if (task == SEGMENTATION){
                 shared_ptr<SegAnnotationItem> item = std::make_shared<SegAnnotationItem>();
+                item->fromJsonObject(value.toObject());
+                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+            }else if (task == DETECTION3D){
+                shared_ptr<CubeAnnotationItem> item = std::make_shared<CubeAnnotationItem>();
                 item->fromJsonObject(value.toObject());
                 this->push_back(std::static_pointer_cast<AnnotationItem>(item));
             }

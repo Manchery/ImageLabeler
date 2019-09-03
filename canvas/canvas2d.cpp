@@ -1,6 +1,7 @@
 #include "canvas2d.h"
 #include "segannotationitem.h"
 #include "rectannotationitem.h"
+#include "annotationcontainer.h"
 #include "utils.h"
 #include <QPainter>
 #include <QMouseEvent>

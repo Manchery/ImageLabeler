@@ -5,6 +5,7 @@
 #include "canvas3d.h"
 #include "labeldialog.h"
 #include "labelmanager.h"
+#include "annotationcontainer.h"
 #include "filemanager.h"
 #include <QMainWindow>
 #include <QMap>

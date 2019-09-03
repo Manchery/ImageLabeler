@@ -39,6 +39,13 @@ QString FileManager::getName(QString fileName)
     return list.join('.');
 }
 
+// example: "../../../abc.d" => abc.d
+QString FileManager::getNameWithExtension(QString fileName)
+{
+    QStringList list = fileName.split('/');
+    return list.back();
+}
+
 void FileManager::saveJson(QJsonObject json, QString fileName)
 {
     QJsonDocument document;
@@ -119,7 +126,7 @@ int FileManager::count(){ return imageFiles.length(); }
 
 void FileManager::setAll(QString fileName, QString outputExtension)
 {
-    imageFiles.clear(); outputFiles.clear();
+    imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
 
     mode = SingleImage;
@@ -134,6 +141,7 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
 {
     imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
+
     mode = MultiImage;
     curIdx = 0;
     fileNames.sort();
@@ -148,8 +156,9 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
 
 void FileManager::setAllDetection3D(QStringList fileNames, QString outputExtension)
 {
-    imageFiles.clear(); outputFiles.clear();
+    imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
+
     mode = ThirdDImage;
     curIdx = 0;
     fileNames.sort();

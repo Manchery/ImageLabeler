@@ -37,6 +37,8 @@ public:
     int sizeY() const { return imagesZ[0].height(); }
     int sizeZ() const { return imagesZ.length(); }
 
+    Point3D getFocusPos() const { return focusPos; }
+
 signals:
     void focus3dMoved(Point3D focusPos);
     void cursor3dMoved(Point3D cursorPos);
@@ -57,6 +59,8 @@ public slots:
     void mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child);
     void mouseMovedWhenSelected(Point3D cursorPos);
     void mouseReleasedWhenSelected();
+
+    void close();
 private:
     QGridLayout *layout;
     ChildCanvas3D *canvasZ, *canvasX, *canvasY;
