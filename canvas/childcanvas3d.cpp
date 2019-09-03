@@ -20,6 +20,9 @@ ChildCanvas3D::ChildCanvas3D(Canvas3D *parentCanvas, Axis axis, QWidget *parent)
     setMouseTracking(true);
     mousePressingWhenMove=false;
     mousePressingWhenSelected=false;
+
+    strokeDrawing = strokeDrawable = false;
+    curStroke = SegStroke3D();
 }
 
 void ChildCanvas3D::paintEvent(QPaintEvent *event)
@@ -35,7 +38,9 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
 
     p.scale(scale, scale);
 //    p.translate(offsetToCenter());
+
     p.drawImage(0,0,image);
+
     p.setPen(QPen(Qt::white));
 
     int focusU, focusV;
@@ -119,6 +124,31 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
                 p.drawText(drawedRect.topLeft()-QPoint(0,10), selectedLabel);
             }
         }
+    } else if (parentCanvas->task == SEGMENTATION3D){
+        if (parentCanvas->mode == DRAW){
+            if (strokeDrawable){
+                DrawMode drawMode = parentCanvas->drawMode;
+                int curPenWidth = parentCanvas->curPenWidth;
+
+                p.setOpacity(0.5);
+
+                if (strokeDrawing){
+                    curStroke.drawSelf(p, Qt::white, false);
+                }
+
+                if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN) && !outOfPixmap(cursorPos)){
+                    p.save();
+                    if (parentCanvas->drawMode==SQUAREPEN){
+                        p.setPen(QPen(Qt::white, curPenWidth, Qt::SolidLine, Qt::SquareCap, Qt::BevelJoin));
+                    }else if (parentCanvas->drawMode==CIRCLEPEN){
+                        p.setPen(QPen(Qt::white, curPenWidth, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+                    }
+                    //! TODO: cursorPos maybe stick on the boundary of image
+                    p.drawPoint(cursorPos);
+                    p.restore();
+                }
+            }
+        }
     }
 
     p.end();
@@ -168,6 +198,52 @@ void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
                 emit mousePressWhenSelected(cursorPos3d());
             }
         }
+    } else if (parentCanvas->task == SEGMENTATION3D){
+        if (parentCanvas->mode == DRAW){
+            //! TODO pixPos maybe out of image
+            DrawMode drawMode = parentCanvas->drawMode;
+            int curPenWidth = parentCanvas->curPenWidth;
+            if (event->button()==Qt::LeftButton){
+                if (drawMode!=POLYGEN){
+                    curStroke.points.clear();
+
+                    curStroke.penWidth = curPenWidth;
+                    switch(drawMode){
+                    case CONTOUR: curStroke.type="contour"; break;
+                    case SQUAREPEN: curStroke.type="square_pen"; break;
+                    case CIRCLEPEN: curStroke.type="circle_pen"; break;
+                    default: throw "abnormal draw mode when segmentation";
+                    }
+                    curStroke.points.push_back(pixPos);
+                    curStroke.z = parentCanvas->focusPos.z;
+                    strokeDrawing=true;
+                    update();
+                }else{ // drawMode == POLYGEN
+                    if (!strokeDrawing){
+                        curStroke.points.clear();
+
+                        curStroke.penWidth = curPenWidth;
+                        curStroke.type = "contour";
+                        curStroke.points.push_back(pixPos);
+                        curStroke.points.push_back(pixPos);
+                        curStroke.z = parentCanvas->focusPos.z;
+                        strokeDrawing=true;
+                        update();
+                    }else{
+                        curStroke.points.push_back(pixPos);
+                        update();
+                    }
+                }
+            }else if (event->button() == Qt::RightButton){
+                if (drawMode!=POLYGEN || strokeDrawing==false){
+                    emit removeLatestStrokeRequest();
+                }else{ //drawMode == POLYGEN && strokeDrawing
+                    strokeDrawing=false;
+                    curStroke = SegStroke3D();
+                    update();
+                }
+            }
+        }
     }
 }
 
@@ -203,6 +279,24 @@ void ChildCanvas3D::mouseMoveEvent(QMouseEvent *event)
                 emit mouseMoveWhenSelected(cursorPos3d());
             }
         }
+    }else if (parentCanvas->task == SEGMENTATION3D){
+        if (parentCanvas->mode == DRAW){
+            DrawMode drawMode = parentCanvas->drawMode;
+            if (drawMode!=POLYGEN){
+                if (strokeDrawing){
+                    curStroke.points.push_back(pixPos);
+                    update();
+                }
+                if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
+                    update(); // track pen pos;
+                }
+            }else{ // drawMode == POLYGEN
+                if (strokeDrawing){
+                    curStroke.points.back()=pixPos;
+                    update();
+                }
+            }
+        }
     }
 }
 
@@ -218,7 +312,34 @@ void ChildCanvas3D::mouseReleaseEvent(QMouseEvent *event)
             mousePressingWhenSelected=false;
             emit mouseReleaseWhenSelected();
         }
+    }else if (parentCanvas->task == TaskMode::SEGMENTATION3D){
+        if (parentCanvas->mode == DRAW){
+            if (parentCanvas->drawMode!=POLYGEN){
+                strokeDrawing=false;
+                emit newStrokeRequest(curStroke);
+                curStroke = SegStroke3D();
+                update();
+            }
+        }
     }
+}
+
+void ChildCanvas3D::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if (image.isNull()){
+        QWidget::mouseDoubleClickEvent(event);
+        return;
+    }
+    //    QPoint pixPos = boundedPixelPos(event->pos());
+    if (parentCanvas->task==SEGMENTATION3D)
+        if (parentCanvas->mode == DRAW){
+            if (parentCanvas->drawMode==POLYGEN){
+                strokeDrawing=false;
+                emit newStrokeRequest(curStroke);
+                curStroke = SegStroke3D();
+                update();
+            }
+        }
 }
 
 QPoint ChildCanvas3D::pixelPos(QPoint pos)

@@ -10,7 +10,7 @@ RectAnnotationItem::RectAnnotationItem():AnnotationItem(), rect()  { }
 
 RectAnnotationItem::RectAnnotationItem(QRect rect, QString label, int id):AnnotationItem (label, id), rect(rect) { }
 
-QString RectAnnotationItem::toStr(){
+QString RectAnnotationItem::toStr() const{
     QString topLeftStr = "("+QString::number(rect.topLeft().x())+","+
             QString::number(rect.topLeft().y())+")";
     QString bottomRightStr = "("+QString::number(rect.bottomRight().x())+","+

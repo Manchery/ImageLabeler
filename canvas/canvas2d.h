@@ -50,7 +50,7 @@ public slots:
 
     void loadPixmap(QPixmap);
     void paintEvent(QPaintEvent*) override;
-    void setPenWidth(int width) {
+    void setPenWidth(int width) override {
         curPenWidth = width;
         if (drawMode==CIRCLEPEN || drawMode==SQUAREPEN)
             lastPenWidth = width;
@@ -78,8 +78,8 @@ private:
 
     //! for seg drawing
     bool strokeDrawing;
-    int lastPenWidth;
-    int curPenWidth;
+//    int lastPenWidth;
+//    int curPenWidth;
     QList<SegStroke> curStrokes;
 };
 

@@ -34,8 +34,9 @@ class AnnotationContainer: public QObject
     Q_OBJECT
 public:
     explicit AnnotationContainer(QObject *parent = nullptr);
-    int length() const;
+    int length() const{ return items.length(); }
     AnnoItemPtr operator [](int idx) const;
+    AnnoItemPtr at(int idx) const { checkIdx(idx); return items[idx]; }
     bool hasData(QString label);
 
     QJsonArray toJsonArray();
@@ -44,7 +45,6 @@ public:
 
     int getSelectedIdx() const;
     AnnoItemPtr getSelectedItem() const;
-    AnnoItemPtr at(int idx) const { checkIdx(idx); return items[idx]; }
 
     int newInstanceIdForLabel(QString label);
 

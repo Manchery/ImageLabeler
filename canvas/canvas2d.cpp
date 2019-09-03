@@ -12,7 +12,6 @@ Canvas2D::Canvas2D(const LabelManager *pLabelManager, const AnnotationContainer 
     CanvasBase (pLabelManager, pAnnoContainer, parent),
     pixmap()
 {
-    lastPenWidth=DEFAULT_PEN_WIDTH;
     mousePos=QPoint(0,0);
     setMouseTracking(true);
 }
@@ -127,6 +126,7 @@ void Canvas2D::paintEvent(QPaintEvent *event)
 
             p.end();
         }else if (mode == SELECT){
+            //! TODO: add segmentation select mode
             QPixmap colorMap(pixmap.size());
             colorMap.fill(QColor(0,0,0,0));
             QPainter p0(&colorMap);
@@ -207,6 +207,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
         }
     }else if (task == TaskMode::SEGMENTATION){
         if (mode == DRAW){
+            //!TODO pixPos maybe out of image
             if (event->button()==Qt::LeftButton){
                 if (drawMode!=POLYGEN){
                     SegStroke stroke;
@@ -221,21 +222,19 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                     curStrokes.push_back(stroke);
                     strokeDrawing=true;
                     update();
-                }else{ // drawMode == POLYGEN
-                    if (event->button()==Qt::LeftButton){
-                        if (!strokeDrawing){
-                            SegStroke stroke;
-                            stroke.penWidth = curPenWidth;
-                            stroke.type = "contour";
-                            stroke.points.push_back(pixPos);
-                            stroke.points.push_back(pixPos);
-                            curStrokes.push_back(stroke);
-                            strokeDrawing=true;
-                            update();
-                        }else{
-                            curStrokes.back().points.push_back(pixPos);
-                            update();
-                        }
+                }else{ // drawMode == POLYGEN     
+                    if (!strokeDrawing){
+                        SegStroke stroke;
+                        stroke.penWidth = curPenWidth;
+                        stroke.type = "contour";
+                        stroke.points.push_back(pixPos);
+                        stroke.points.push_back(pixPos);
+                        curStrokes.push_back(stroke);
+                        strokeDrawing=true;
+                        update();
+                    }else{
+                        curStrokes.back().points.push_back(pixPos);
+                        update();
                     }
                 }
             }else if (event->button()==Qt::RightButton){
@@ -301,7 +300,7 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
                     update();
                 }
                 if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
-                    update(); // track mouse pos;
+                    update(); // track pen pos;
                 }
             }else{ // drawMode == POLYGEN
                 if (strokeDrawing){

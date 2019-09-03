@@ -77,46 +77,25 @@ void SegStroke::drawSelf(QPainter &p, QColor color, bool fill)
     p.restore();
 }
 
-std::shared_ptr<SegAnnotationItem> SegAnnotationItem::castPointer(std::shared_ptr<AnnotationItem> ptr)
+SegStroke3D::SegStroke3D(): SegStroke (), z(-1) { }
+
+void SegStroke3D::fromJsonObject(QJsonObject json)
 {
-    return std::static_pointer_cast<SegAnnotationItem>(ptr);
-}
-
-SegAnnotationItem::SegAnnotationItem()
-{
-
-}
-
-SegAnnotationItem::SegAnnotationItem(const QList<SegStroke> &strokes, QString label, int id): AnnotationItem(label,id),strokes(strokes) {}
-
-QString SegAnnotationItem::toStr(){
-    return label+" "+QString::number(id);
-}
-
-QJsonObject SegAnnotationItem::toJsonObject() const{
-    QJsonObject json = AnnotationItem::toJsonObject();
-    QJsonArray array;
-    for (auto stroke: strokes){
-        array.append(stroke.toJsonObject());
-    }
-    json.insert("strokes", array);
-    return json;
-}
-
-void SegAnnotationItem::fromJsonObject(const QJsonObject &json){
-    AnnotationItem::fromJsonObject(json);
-    if (json.contains("strokes")){
-        QJsonValue value = json.value("strokes");
-        if (value.isArray()){
-            strokes.clear();
-            QJsonArray array = value.toArray();
-            for (int i=0;i<array.size();i++){
-                SegStroke stroke;
-                stroke.fromJsonObject(array[i].toObject());
-                strokes.push_back(stroke);
-            }
+    SegStroke::fromJsonObject(json);
+    if (json.contains("z_coordinate")){
+        QJsonValue value = json.value("z_coordinate");
+        if (value.isDouble()){
+            z = static_cast<int>(value.toDouble());
+            qDebug()<<"z_coordinate: "<<z;
         }
     }
+}
+
+QJsonObject SegStroke3D::toJsonObject()
+{
+    QJsonObject json = SegStroke::toJsonObject();
+    json.insert("z_coordinate", z);
+    return json;
 }
 
 QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager)
@@ -151,3 +130,4 @@ QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoConta
     p.end();
     return image;
 }
+

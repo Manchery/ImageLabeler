@@ -41,6 +41,7 @@ public slots:
     void getNewRect(QRect rect);
     void getNewStrokes(const QList<SegStroke> &strokes);
     void getNewCube(Cuboid cube);
+    void getNewStrokes3D(const QList<SegStroke3D> &strokes);
 
     void newLabelRequest(QString newLabel);
     void removeLabelRequest(QString label);

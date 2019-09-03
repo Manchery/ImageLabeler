@@ -2,6 +2,7 @@
 #define CANVAS2D_H
 
 #include "cubeannotationitem.h"
+#include "segannotationitem.h"
 #include "utils.h"
 #include <QWidget>
 #include <QPixmap>
@@ -36,6 +37,7 @@ public:
     Point3D cursorPos3d() const;
 
     int selectShape(Point3D pos);
+
 signals:
     void focusMoved(QPoint pos);
     void cursorMoved(Point3D pos);
@@ -46,11 +48,15 @@ signals:
     void mouseMoveWhenSelected(Point3D cursorPos);
     void mouseReleaseWhenSelected();
 
+    void removeLatestStrokeRequest();
+    void newStrokeRequest(SegStroke3D stroke);
+
 public slots:
     void paintEvent(QPaintEvent*);
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent* event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
 
 private:
     const Canvas3D *parentCanvas;
@@ -69,9 +75,13 @@ private:
 
     //! for bbox drawing
     QList<QPoint> curPoints;
-
     bool _showableForCube(Cuboid cube) const;
     QRect _rectForCube(Cuboid cube) const;
+
+    //! for seg stroke drawing
+    bool strokeDrawable;
+    bool strokeDrawing;
+    SegStroke3D curStroke;
 };
 
 #endif // CANVAS2D_H

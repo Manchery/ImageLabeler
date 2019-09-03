@@ -84,7 +84,7 @@ void MainWindow::_setupToolBarAndStatusBar()
 
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
-    connect(penWidthBox, SIGNAL(valueChanged(int)), canvas2d, SLOT(setPenWidth(int)));
+    connect(penWidthBox, SIGNAL(valueChanged(int)), curCanvas, SLOT(setPenWidth(int)));
 
     unableFileActions();
 
@@ -113,7 +113,13 @@ void MainWindow::_setupLabelManager()
             });
 
     // label changed -> canvas repaint (TODO: 2d or 3d /FINISHED?
-    connect(&labelManager, &LabelManager::configChanged, curCanvas, qOverload<>(&QWidget::update));
+    connect(&labelManager, &LabelManager::configChanged, [this](){
+        if (curCanvas==canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D){
+            canvas3d->repaintSegAnnotation();
+        }else {
+            curCanvas->update();
+        }
+    });
 
     // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
@@ -185,6 +191,7 @@ void MainWindow::_setupAnnotationContainer()
     // request from canvas
     connect(canvas2d, &Canvas2D::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas2d, &Canvas2D::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
+    connect(canvas3d, &Canvas3D::newStrokes3DAnnotated, this, &MainWindow::getNewStrokes3D);
 
     connect(canvas3d, &Canvas3D::newCubeAnnotated, this, &MainWindow::getNewCube);
 
@@ -206,7 +213,13 @@ void MainWindow::_setupAnnotationContainer()
     });
 
     // anno changed: canvas repaint (TODO: 2d or 3d /FINISHED?
-    connect(&annoContainer, &AnnotationContainer::dataChanged, curCanvas, qOverload<>(&QWidget::update));
+    connect(&annoContainer, &AnnotationContainer::dataChanged, [this](){
+        if (curCanvas==canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D){
+            canvas3d->repaintSegAnnotation();
+        }else {
+            curCanvas->update();
+        }
+    });
 
     // anno changed: ui list changed
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
@@ -264,6 +277,11 @@ void MainWindow::_setupFileManager()
             switchFile(idx);
         }
     });
+    // ui list responding to focus move
+    connect(canvas3d, &Canvas3D::focus3dMoved, [this](Point3D focus){
+        fileManager.selectFile(focus.z);
+        ui->fileListWidget->item(focus.z)->setSelected(true);
+    });
 }
 
 void MainWindow::taskModeChanged()
@@ -301,6 +319,7 @@ void MainWindow::taskModeChanged()
         drawComboBox->addItem("Contour");
         drawComboBox->addItem("Polygonal Contour");
         penWidthBox->setEnabled(true);
+        //! TODO: add segmentation select mode
         ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
     }
 }
@@ -310,17 +329,17 @@ void MainWindow::drawModeChanged()
     QString text = drawComboBox->currentText();
 
     if (text=="Rectangle") curCanvas->changeDrawMode(RECTANGLE);
-    if (text=="Circle Pen") curCanvas->changeDrawMode(CIRCLEPEN);
-    if (text=="Square Pen") curCanvas->changeDrawMode(SQUAREPEN);
-    if (text=="Contour") curCanvas->changeDrawMode(CONTOUR);
-    if (text=="Polygonal Contour") curCanvas->changeDrawMode(POLYGEN);
+    else if (text=="Circle Pen") curCanvas->changeDrawMode(CIRCLEPEN);
+    else if (text=="Square Pen") curCanvas->changeDrawMode(SQUAREPEN);
+    else if (text=="Contour") curCanvas->changeDrawMode(CONTOUR);
+    else if (text=="Polygonal Contour") curCanvas->changeDrawMode(POLYGEN);
 
     if (text=="Rectangle"||text=="Contour"||text=="Polygonal Contour"){
         penWidthBox->setEnabled(false);
         penWidthBox->setValue(1);
     }else if (text=="Circle Pen"||text=="Square Pen"){
         penWidthBox->setEnabled(true);
-        penWidthBox->setValue(canvas2d->getLastPenWidth());
+        penWidthBox->setValue(curCanvas->getLastPenWidth());
     }
 }
 
@@ -364,6 +383,16 @@ void MainWindow::getNewCube(Cuboid cube)
     if (label=="") return;
     std::shared_ptr<CubeAnnotationItem> item =
             std::make_shared<CubeAnnotationItem>(cube, label,
+                                                 annoContainer.newInstanceIdForLabel(label));
+    annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
+}
+
+void MainWindow::getNewStrokes3D(const QList<SegStroke3D> &strokes)
+{
+    QString label = _labelRequest();
+    if (label=="") return;
+    std::shared_ptr<Seg3DAnnotationItem> item =
+            std::make_shared<Seg3DAnnotationItem>(strokes, label,
                                                  annoContainer.newInstanceIdForLabel(label));
     annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
@@ -452,11 +481,16 @@ QString MainWindow::getCurrentLabel()
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event){
-    if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter)
+    if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter){
         if (curCanvas==canvas2d && canvas2d->getTaskMode()==SEGMENTATION && canvas2d->getCanvasMode()==DRAW){
             canvas2d->keyPressEvent(event);
             return;
         }
+        if (curCanvas==canvas3d && canvas3d->getTaskMode()==SEGMENTATION3D && canvas3d->getCanvasMode()==DRAW){
+            canvas3d->keyPressEvent(event);
+            return;
+        }
+    }
     if (event->key()==Qt::Key_Control)
         if (curCanvas==canvas3d){
             canvas3d->keyPressEvent(event);
@@ -539,7 +573,9 @@ void MainWindow::on_actionOpen_Dir_triggered()
             fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
 
         }else if (taskComboBox->currentText()=="3D Segmentation "){
-            //! TODO
+            canvas3d->loadImagesZ(images);
+            adjustFitWindow();
+            fileManager.setAllDetection3D(images, "segment3d_labels_annotations.json");
         }
 
         _loadJsonFile(fileManager.getLabelFile());

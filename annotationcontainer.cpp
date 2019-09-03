@@ -86,10 +86,6 @@ void AnnotationContainer::setSelected(int idx)
     emit dataChanged();
 }
 
-int AnnotationContainer::length() const{
-    return items.length();
-}
-
 AnnoItemPtr AnnotationContainer::operator [](int idx) const{
     checkIdx(idx);
     return items[idx];

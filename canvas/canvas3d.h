@@ -46,6 +46,7 @@ signals:
     void newCubeAnnotated(Cuboid cube);
     void removeCubeRequest(int idx);
     void modifySelectedCubeRequest(int idx, Cuboid cube);
+    void newStrokes3DAnnotated(const QList<SegStroke3D>& strokes);
 
 public slots:
     /*--------------------from CanvasBase (parent class)-------------------*/
@@ -59,15 +60,27 @@ public slots:
 
     void updateImageForChild();
 
+    void repaintSegAnnotation();
+
+    //! for bbox editing
     void mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child);
     void mouseMovedWhenSelected(Point3D cursorPos);
     void mouseReleasedWhenSelected();
 
     void close();
+
+    void setPenWidth(int width) override {
+        curPenWidth = width;
+        if (drawMode==CIRCLEPEN || drawMode==SQUAREPEN)
+            lastPenWidth = width;
+        canvasZ->update();
+    }
+
 private:
     QGridLayout *layout;
     ChildCanvas3D *canvasZ, *canvasX, *canvasY;
     QList<QImage> imagesZ;
+    QList<QImage> initImagesZ;
 
     Point3D focusPos;
     Point3D cursorPos;
@@ -85,6 +98,10 @@ private:
     bool editing;
     EditingCubeFace editingCubeFace;
 
+    //! for segment
+//    int lastPenWidth;
+//    int curPenWidth;
+    QList<SegStroke3D> curStrokes;
 };
 
 #endif // CANVAS3D_H

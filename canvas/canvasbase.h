@@ -38,6 +38,8 @@ public:
     virtual QSize sizeUnscaled() const = 0;
 
     virtual QString modeString() const;
+
+    int getLastPenWidth() const { return lastPenWidth; }
 signals:
     void modeChanged(QString mode);
 public slots:
@@ -45,6 +47,8 @@ public slots:
     virtual void changeTask(TaskMode _task) = 0;
     virtual void changeCanvasMode(CanvasMode _mode) = 0;
     virtual void changeDrawMode(DrawMode _draw) = 0;
+
+    virtual void setPenWidth(int) = 0;
 
 protected:
     qreal scale;
@@ -57,6 +61,10 @@ protected:
     //! related data
     const AnnotationContainer *pAnnoContainer;
     const LabelManager* pLabelManager;
+
+    //! pen width for segmentation
+    int lastPenWidth;
+    int curPenWidth;
 };
 
 #endif // CANVASBASE_H

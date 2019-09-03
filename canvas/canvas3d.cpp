@@ -14,9 +14,10 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     layout = new QGridLayout(this);
     this->setLayout(layout);
 
-    canvasZ = new ChildCanvas3D(this, Z, this);
+    canvasZ = new ChildCanvas3D(this, Z, this); canvasZ->strokeDrawable=true;
     canvasX = new ChildCanvas3D(this, X, this);
     canvasY = new ChildCanvas3D(this, Y, this);
+
     layout->addWidget(canvasZ, 0, 0);
     layout->addWidget(canvasX, 0, 1);
     layout->addWidget(canvasY, 1, 0);
@@ -44,8 +45,6 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     //! end focus move
 
     //! report cursor move
-    // It is even possible to connect a signal directly to another signal.
-    // (This will emit the second signal immediately whenever the first is emitted.)
     connect(canvasX, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
     connect(canvasY, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
     connect(canvasZ, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
@@ -94,6 +93,17 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     connect(canvasY, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
     connect(canvasZ, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
     //! end bbox editing
+
+    connect(canvasZ, &ChildCanvas3D::removeLatestStrokeRequest, [this](){
+        if (curStrokes.length()>0){
+            curStrokes.pop_back();
+            repaintSegAnnotation();
+        }
+    });
+    connect(canvasZ, &ChildCanvas3D::newStrokeRequest, [this](SegStroke3D stroke){
+        curStrokes.push_back(stroke);
+        repaintSegAnnotation();
+    });
 }
 
 
@@ -165,6 +175,42 @@ void Canvas3D::updateImageForChild()
     update();
 }
 
+// perhaps the bottle-neck of running efficiency
+void Canvas3D::repaintSegAnnotation()
+{
+    QList<std::shared_ptr<Seg3DAnnotationItem>> segItems;
+    for (int i=0;i<pAnnoContainer->length();i++){
+        auto item = Seg3DAnnotationItem::castPointer(pAnnoContainer->at(i));
+        if (pLabelManager->hasLabel(item->label) && (*pLabelManager)[item->label].visible==false)
+            continue;
+        segItems.push_back(item);
+    }
+
+    for (int i=0;i<imagesZ.length();i++){
+        QPixmap colorMap(imagesZ[i].size());
+        colorMap.fill(QColor(0,0,0,0));
+        QPainter p0(&colorMap);
+        for (auto item: segItems){
+            QString label = item->label;
+            QColor color = pLabelManager->getColor(label);
+            for (auto stroke: item->strokes)
+                if (stroke.z==i)
+                    stroke.drawSelf(p0, color);
+        }
+        for (auto stroke: curStrokes)
+            if (stroke.z==i)
+                stroke.drawSelf(p0, Qt::white);
+        p0.end();
+
+        imagesZ[i] = initImagesZ[i];
+        QPainter p(&imagesZ[i]);
+        p.setOpacity(0.5);
+        p.drawPixmap(0,0,colorMap);
+    }
+
+    updateImageForChild();
+}
+
 void Canvas3D::close(){
     imagesZ.clear();
     canvasX->loadImage(QImage());
@@ -193,6 +239,8 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     imagesZ.clear();
     for (auto file: imagesFile)
         imagesZ.push_back(QImage(file));
+    if (task == SEGMENTATION3D) initImagesZ = imagesZ;
+
     focusPos = Point3D(imagesZ[0].width()/2,imagesZ[0].height()/2,0);
     updateImageForChild();
 
@@ -208,9 +256,21 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
         lastMode = mode;
         //!!! TODO: need some if to avoid breaking current operation
         changeCanvasMode(MOVE);
-    }else{
-        QWidget::keyPressEvent(event);
+        return;
     }
+    if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter){
+        if (task == SEGMENTATION3D && mode == DRAW){
+            if (drawMode==POLYGEN){
+                canvasZ->strokeDrawing=false;
+            }
+            if (curStrokes.length()>0){
+                emit newStrokes3DAnnotated(curStrokes);
+                curStrokes.clear();
+                repaintSegAnnotation();
+            }
+        }
+    }
+    QWidget::keyPressEvent(event);
 }
 
 void Canvas3D::keyReleaseEvent(QKeyEvent *event)
@@ -287,9 +347,15 @@ void Canvas3D::changeDrawMode(DrawMode _draw)
         break;
     case CIRCLEPEN:
     case SQUAREPEN:
+        canvasZ->strokeDrawing = false;
+        canvasZ->curStroke = SegStroke3D();
+        curPenWidth = lastPenWidth;
         break;
     case CONTOUR:
     case POLYGEN:
+        canvasZ->strokeDrawing = false;
+        canvasZ->curStroke = SegStroke3D();
+        curPenWidth = 1;
         break;
     }
     emit modeChanged(modeString());

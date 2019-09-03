@@ -67,7 +67,7 @@ CubeAnnotationItem::CubeAnnotationItem():AnnotationItem (), cube() { }
 
 CubeAnnotationItem::CubeAnnotationItem(Cuboid cube, QString label, int id): AnnotationItem (label, id), cube(cube) { }
 
-QString CubeAnnotationItem::toStr()
+QString CubeAnnotationItem::toStr() const
 {
     QString topLeftStr = "("+QString::number(cube.topLeft().x)+","+
             QString::number(cube.topLeft().y)+","+

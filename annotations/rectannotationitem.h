@@ -15,7 +15,7 @@ public:
     QRect rect;
     RectAnnotationItem();
     RectAnnotationItem(QRect rect, QString label, int id);
-    QString toStr();
+    QString toStr() const;
     QJsonObject toJsonObject() const;
     void fromJsonObject(const QJsonObject &json);
 };

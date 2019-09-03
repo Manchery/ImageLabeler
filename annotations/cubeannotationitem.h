@@ -58,7 +58,7 @@ public:
     Cuboid cube;
     CubeAnnotationItem();
     CubeAnnotationItem(Cuboid cube, QString label, int id);
-    QString toStr();
+    QString toStr() const;
     QJsonObject toJsonObject() const;
     void fromJsonObject(const QJsonObject &json);
 };
