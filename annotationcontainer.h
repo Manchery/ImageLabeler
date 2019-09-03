@@ -44,6 +44,7 @@ public:
 
     int getSelectedIdx() const;
     AnnoItemPtr getSelectedItem() const;
+    AnnoItemPtr at(int idx) const { checkIdx(idx); return items[idx]; }
 
     int newInstanceIdForLabel(QString label);
 

@@ -8,7 +8,7 @@
 #include <algorithm>
 
 Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent):
-    CanvasBase (pLabelManager, pAnnoContainer, parent), focusPos(0,0,0)
+    CanvasBase (pLabelManager, pAnnoContainer, parent), focusPos(0,0,0), cursorPos(0,0,0)
 {
     //! layout
     layout = new QGridLayout(this);
@@ -25,26 +25,33 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     layout->setSizeConstraint(QLayout::SetFixedSize);
     //! end layout
 
+    //! report focus move
     connect(canvasX, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.z = pos.x(); focusPos.y = pos.y();
-        update();
+        updateImageForChild();
         emit focus3dMoved(focusPos);
     });
     connect(canvasY, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.x = pos.x(); focusPos.z = pos.y();
-        update();
+        updateImageForChild();
         emit focus3dMoved(focusPos);
     });
     connect(canvasZ, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.x = pos.x(); focusPos.y = pos.y();
-        update();
+        updateImageForChild();
         emit focus3dMoved(focusPos);
     });
+    //! end focus move
 
-    connect(canvasX, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
-    connect(canvasY, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
-    connect(canvasZ, &ChildCanvas3D::cursorMoved, this, &Canvas3D::cursor3dMoved);
+    //! report cursor move
+    // It is even possible to connect a signal directly to another signal.
+    // (This will emit the second signal immediately whenever the first is emitted.)
+    connect(canvasX, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
+    connect(canvasY, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
+    connect(canvasZ, &ChildCanvas3D::cursorMoved, [this](Point3D newPos){ cursorPos = newPos; emit cursor3dMoved(newPos); });
+    //! end report cursor move
 
+    //! add bbox
     connect(canvasX, &ChildCanvas3D::newRectAnnotated, [this](QRect rect){
         Cuboid cube;
         cube.setTopLeft(std::max(focusPos.x-10, 0), rect.top(), rect.left());
@@ -63,11 +70,15 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
         cube.setBottomRight(rect.right(), rect.bottom(), std::min(focusPos.z+10, sizeZ()-1));
         emit newCubeAnnotated(cube);
     });
+    //! end add bbox
 
+    //! bbox removing
     connect(canvasX, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
     connect(canvasY, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
     connect(canvasZ, &ChildCanvas3D::removeCubeRequest, this, &Canvas3D::removeCubeRequest);
+    //! end bbox removing
 
+    //! bbox editing
     connect(canvasX, &ChildCanvas3D::mousePressWhenSelected,
             [this](Point3D cursorPos){ this->mousePressedWhenSelected(cursorPos, canvasX); });
     connect(canvasY, &ChildCanvas3D::mousePressWhenSelected,
@@ -82,6 +93,7 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     connect(canvasX, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
     connect(canvasY, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
     connect(canvasZ, &ChildCanvas3D::mouseReleaseWhenSelected, this, &Canvas3D::mouseReleasedWhenSelected);
+    //! end bbox editing
 }
 
 
@@ -106,29 +118,51 @@ void Canvas3D::mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child)
 
 void Canvas3D::mouseMovedWhenSelected(Point3D cursorPos)
 {
-    switch(editingCubeFace){
-    case FRONTf:
-        editingCube.setmaxY(cursorPos.y); break;
-    case BACKf:
-        editingCube.setminY(cursorPos.y); break;
-    case LEFTf:
-        editingCube.setminX(cursorPos.x); break;
-    case RIGHTf:
-        editingCube.setmaxX(cursorPos.x); break;
-    case TOPf:
-        editingCube.setminZ(cursorPos.z); break;
-    case BOTTOMf:
-        editingCube.setmaxZ(cursorPos.z); break;
+    if (editing){
+        switch(editingCubeFace){
+        case FRONTf:
+            editingCube.setmaxY(cursorPos.y); break;
+        case BACKf:
+            editingCube.setminY(cursorPos.y); break;
+        case LEFTf:
+            editingCube.setminX(cursorPos.x); break;
+        case RIGHTf:
+            editingCube.setmaxX(cursorPos.x); break;
+        case TOPf:
+            editingCube.setminZ(cursorPos.z); break;
+        case BOTTOMf:
+            editingCube.setmaxZ(cursorPos.z); break;
+        }
+        update();
     }
-    canvasX->update();
-    canvasY->update();
-    canvasZ->update();
 }
 
 void Canvas3D::mouseReleasedWhenSelected()
 {
-    editing = false;
-    emit modifySelectedCubeRequest(pAnnoContainer->getSelectedIdx(), editingCube.normalized());
+    if (editing){
+        editing = false;
+        emit modifySelectedCubeRequest(pAnnoContainer->getSelectedIdx(), editingCube.normalized());
+    }
+}
+
+// this does no respond to focus move (need of speed), please use updateImageForChild when focus moved
+void Canvas3D::paintEvent(QPaintEvent *event)
+{
+    if (imagesZ.length()>0){
+        canvasX->update();
+        canvasY->update();
+        canvasZ->update();
+    }else{
+        QWidget::paintEvent(event);
+    }
+}
+
+void Canvas3D::updateImageForChild()
+{
+    canvasZ->loadImage(imagesZ[focusPos.z]);
+    canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
+    canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
+    update();
 }
 
 void Canvas3D::close(){
@@ -136,14 +170,7 @@ void Canvas3D::close(){
     canvasX->loadImage(QImage());
     canvasY->loadImage(QImage());
     canvasZ->loadImage(QImage());
-}
-
-QSize Canvas3D::minimumSizeHint() const
-{
-    if (imagesZ.length()>0){
-        return layout->minimumSize();
-    }
-    return QWidget::minimumSizeHint();
+    update();
 }
 
 void Canvas3D::setScale(qreal newScale)
@@ -152,6 +179,13 @@ void Canvas3D::setScale(qreal newScale)
     canvasX->setScale(scale);
     canvasY->setScale(scale);
     canvasZ->setScale(scale);
+    update();
+}
+
+void Canvas3D::setFocusPos(Point3D pos) {
+    focusPos = pos;
+    updateImageForChild();
+    emit focus3dMoved(pos);
 }
 
 void Canvas3D::loadImagesZ(QStringList imagesFile)
@@ -160,7 +194,7 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     for (auto file: imagesFile)
         imagesZ.push_back(QImage(file));
     focusPos = Point3D(imagesZ[0].width()/2,imagesZ[0].height()/2,0);
-    update();
+    updateImageForChild();
 
     int leftMargin, rightMargin, topMargin, bottomMargin;
     layout->getContentsMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin);
@@ -190,17 +224,6 @@ void Canvas3D::keyReleaseEvent(QKeyEvent *event)
     }
 }
 
-void Canvas3D::paintEvent(QPaintEvent *event)
-{
-    if (imagesZ.length()>0){
-        canvasZ->loadImage(imagesZ[focusPos.z]);
-        canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
-        canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
-    }else{
-        QWidget::paintEvent(event);
-    }
-}
-
 QImage Canvas3D::getYSlides(const QList<QImage> &_imageZ, int y)
 {
     int row = _imageZ[0].width();
@@ -225,14 +248,14 @@ QImage Canvas3D::getXSlides(const QList<QImage> &_imageZ, int x)
 }
 
 void Canvas3D::changeTask(TaskMode _task) {
-    switch(_task){
+    task = _task;
+    switch(task){
     case DETECTION3D:
-        task = TaskMode::DETECTION3D;
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::RECTANGLE;
+        editing = false;
         break;
     case SEGMENTATION3D:
-        task = TaskMode::SEGMENTATION3D;
         break;
     default:
         throw "abnormal 2d task set to canvas 3d";
@@ -245,9 +268,9 @@ void Canvas3D::changeCanvasMode(CanvasMode _mode)
     if (mode == _mode) return;
     mode = _mode;
     if (mode == MOVE){
-        canvasX->resetMousePressing();
-        canvasY->resetMousePressing();
-        canvasZ->resetMousePressing();
+        canvasX->mousePressingWhenMove=false;
+        canvasY->mousePressingWhenMove=false;
+        canvasZ->mousePressingWhenMove=false;
     }
     emit modeChanged(modeString());
 }
@@ -257,6 +280,10 @@ void Canvas3D::changeDrawMode(DrawMode _draw)
     drawMode=_draw;
     switch (drawMode) {
     case RECTANGLE:
+        editing=false;
+        canvasX->curPoints.clear();
+        canvasY->curPoints.clear();
+        canvasZ->curPoints.clear();
         break;
     case CIRCLEPEN:
     case SQUAREPEN:
@@ -266,5 +293,13 @@ void Canvas3D::changeDrawMode(DrawMode _draw)
         break;
     }
     emit modeChanged(modeString());
+}
+
+QSize Canvas3D::minimumSizeHint() const
+{
+    if (imagesZ.length()>0){
+        return layout->minimumSize();
+    }
+    return QWidget::minimumSizeHint();
 }
 

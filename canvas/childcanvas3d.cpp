@@ -18,7 +18,7 @@ ChildCanvas3D::ChildCanvas3D(Canvas3D *parentCanvas, Axis axis, QWidget *parent)
 //    mousePos = QPoint(0,0);
     scale=1.0;
     setMouseTracking(true);
-    mousePressing=false;
+    mousePressingWhenMove=false;
     mousePressingWhenSelected=false;
 }
 
@@ -131,7 +131,7 @@ void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
         return;
     }
     if (parentCanvas->mode == MOVE){
-        mousePressing = true;
+        mousePressingWhenMove = true;
     }
     QPoint pixPos = pixelPos(event->pos());
     if (parentCanvas->task == DETECTION3D){
@@ -185,7 +185,7 @@ void ChildCanvas3D::mouseMoveEvent(QMouseEvent *event)
     }
 
     if (parentCanvas->mode==MOVE){
-        if (mousePressing && !outOfPixmap(pixPos)){
+        if (mousePressingWhenMove && !outOfPixmap(pixPos)){
             emit focusMoved(pixPos);
         }
         return;
@@ -212,7 +212,7 @@ void ChildCanvas3D::mouseReleaseEvent(QMouseEvent *event)
         QWidget::mouseReleaseEvent(event);
         return;
     }
-    mousePressing=false;
+    mousePressingWhenMove=false;
     if (parentCanvas->task == TaskMode::DETECTION3D){
         if (parentCanvas->mode == CanvasMode::SELECT){
             mousePressingWhenSelected=false;
@@ -262,8 +262,6 @@ QRect ChildCanvas3D::_rectForCube(Cuboid cube) const
     }
     return rect;
 }
-
-
 
 void ChildCanvas3D::loadImage(const QImage &newImage)
 {

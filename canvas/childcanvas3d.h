@@ -16,6 +16,7 @@ class Canvas3D;
 class ChildCanvas3D : public QWidget
 {
     Q_OBJECT
+    friend class Canvas3D;
 public:
     explicit ChildCanvas3D(Canvas3D* parentCanvas, Axis axis, QWidget *parent = nullptr);
 
@@ -31,7 +32,6 @@ public:
     bool drawingRect(){
         return curPoints.length()==2;
     }
-    void resetMousePressing() { mousePressing = false; }
 
     Point3D cursorPos3d() const;
 
@@ -61,7 +61,7 @@ private:
     qreal scale;
     QImage image;
 
-    bool mousePressing;
+    bool mousePressingWhenMove;
     bool mousePressingWhenSelected;
 
     QPoint pixelPos(QPoint pos);

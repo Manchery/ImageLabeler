@@ -103,7 +103,13 @@ bool FileManager::hasChangeNotSaved() const { return changeNotSaved; }
 
 QString FileManager::getCurrentImageFile() const { return imageFiles[curIdx]; }
 
-QString FileManager::getCurrentOutputFile() const { return outputFiles[curIdx]; }
+QString FileManager::getCurrentOutputFile() const {
+    if (mode==ThirdDImage)
+        return outputFiles[0];
+    else {
+        return outputFiles[curIdx];
+    }
+}
 
 QString FileManager::getLabelFile() const { return labelFile; }
 

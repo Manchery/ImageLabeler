@@ -31,7 +31,8 @@ public:
 
 
 public slots:
-    void reportMouseMoved(QPoint pos);
+    void reportMouse2dMoved(QPoint pos);
+    void reportMouse3dMoved();
     void reportCanvasMode(QString mode);
 
     void zoomRequest(qreal delta, QPoint pos);
@@ -100,7 +101,6 @@ private:
     void _setupFileManager();
 
     QString _labelRequest();
-
 };
 
 #endif // MAINWINDOW_H

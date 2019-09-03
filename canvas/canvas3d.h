@@ -17,9 +17,7 @@ public:
 
     /*--------------------from CanvasBase (parent class)-------------------*/
     QSize minimumSizeHint() const override;
-    QSize sizeUnscaled() const override {
-        return _sizeUnscaled;
-    }
+    QSize sizeUnscaled() const override { return _sizeUnscaled; }
     /*--------------------from CanvasBase (parent class) END----------------*/
 
     void loadImagesZ(QStringList imagesFile);
@@ -40,6 +38,7 @@ public:
     int sizeZ() const { return imagesZ.length(); }
 
     Point3D getFocusPos() const { return focusPos; }
+    Point3D getCursorPos() const { return cursorPos; }
 
 signals:
     void focus3dMoved(Point3D focusPos);
@@ -56,7 +55,9 @@ public slots:
     void setScale(qreal newScale) override;
     /*--------------------from CanvasBase (parent class) END----------------*/
 
-    void setFocusPos(Point3D pos) { focusPos = pos; update(); }
+    void setFocusPos(Point3D pos);
+
+    void updateImageForChild();
 
     void mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child);
     void mouseMovedWhenSelected(Point3D cursorPos);
@@ -69,6 +70,7 @@ private:
     QList<QImage> imagesZ;
 
     Point3D focusPos;
+    Point3D cursorPos;
 
     void _updateFocusPos();
     QImage getYSlides(const QList<QImage>& _imageZ, int y);

@@ -50,8 +50,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _setupFileManager();
 
-    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouseMoved);
-    connect(canvas2d, &Canvas2D::zoomRequest, this, &MainWindow::zoomRequest);
+    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouse2dMoved);
+    connect(canvas3d, &Canvas3D::focus3dMoved, this, &MainWindow::reportMouse3dMoved);
+    connect(canvas3d, &Canvas3D::cursor3dMoved, this, &MainWindow::reportMouse3dMoved);
+//    connect(canvas2d, &Canvas2D::zoomRequest, this, &MainWindow::zoomRequest);
     connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
 }
 
@@ -154,10 +156,14 @@ void MainWindow::_setupAnnotationContainer()
         }else{
             annoContainer.setSelected(ui->annoListWidget->row(items[0]));
             curCanvas->changeCanvasMode(SELECT);
-            if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
-                auto item = CubeAnnotationItem::castPointer(annoContainer.getSelectedItem());
-                canvas3d->setFocusPos(item->cube.center());
-            }
+        }
+    });
+    connect(ui->annoListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *_item){
+        if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
+            int row = ui->annoListWidget->row(_item);
+            auto item = CubeAnnotationItem::castPointer(annoContainer.at(row));
+            canvas3d->setFocusPos(item->cube.center());
+            switchFile(item->cube.center().z);
         }
     });
 
@@ -234,7 +240,7 @@ void MainWindow::_setupFileManager()
     connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
     connect(&annoContainer, &AnnotationContainer::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
 
-    // sync prev/next action enable (TODO 2d or 3d
+    // sync prev/next action enable
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
 
@@ -556,7 +562,7 @@ bool MainWindow::switchFile(int idx)
     if (curCanvas == canvas2d){
         if (!_checkUnsaved()) return false;
 
-        //! TODO: whether clear
+        //! ? : whether clear
         labelManager.allClear();
         annoContainer.allClear();
 
@@ -677,19 +683,9 @@ void MainWindow::on_actionZoom_out_triggered()
     curCanvas->setScale(curCanvas->getScale()*0.9);
 }
 
-qreal MainWindow::scaleFitWindow()
-{
-    int w1 = ui->scrollArea->width() - 2; // So that no scrollbars are generated.
-    int h1 = ui->scrollArea->height() - 2;
-    qreal a1 = static_cast<qreal>(w1)/h1;
-    int w2 = curCanvas->sizeUnscaled().width();
-    int h2 = curCanvas->sizeUnscaled().height();
-    qreal a2 = static_cast<qreal>(w2)/h2;
-    return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
-}
-
 void MainWindow::enableFileActions()
 {
+    //! TODO: add more action
     ui->actionSave->setEnabled(true);
     ui->actionSave_As->setEnabled(true);
     ui->actionLoad->setEnabled(true);
@@ -704,6 +700,17 @@ void MainWindow::unableFileActions()
     ui->actionLoad->setEnabled(false);
     ui->actionClose->setEnabled(false);
     taskComboBox->setEnabled(true);
+}
+
+qreal MainWindow::scaleFitWindow()
+{
+    int w1 = ui->scrollArea->width() - 2; // So that no scrollbars are generated.
+    int h1 = ui->scrollArea->height() - 2;
+    qreal a1 = static_cast<qreal>(w1)/h1;
+    int w2 = curCanvas->sizeUnscaled().width();
+    int h2 = curCanvas->sizeUnscaled().height();
+    qreal a2 = static_cast<qreal>(w2)/h2;
+    return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
 }
 
 void MainWindow::adjustFitWindow()
@@ -731,15 +738,24 @@ void MainWindow::zoomRequest(qreal delta, QPoint pos)
     }
 }
 
-void MainWindow::reportMouseMoved(QPoint pos)
+void MainWindow::reportMouse2dMoved(QPoint pos)
 {
     mousePosLabel->setText("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
-//    ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
+    //    ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
+}
+
+void MainWindow::reportMouse3dMoved()
+{
+    QString text;
+    Point3D pos = canvas3d->getCursorPos();
+    text = "cursor(" + QString::number(pos.x)+","+QString::number(pos.y)+","+QString::number(pos.z)+")";
+    pos = canvas3d->getFocusPos();
+    text += ", focus(" + QString::number(pos.x)+","+QString::number(pos.y)+","+QString::number(pos.z)+")";
+    mousePosLabel->setText(text);
 }
 void MainWindow::reportCanvasMode(QString mode){
     ui->statusBar->showMessage(mode, 5000);
 }
-
 
 void MainWindow::_loadJsonFile(QString fileName)
 {
