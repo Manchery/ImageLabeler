@@ -240,8 +240,8 @@ void MainWindow::_setupFileManager()
 
     // to update ui list
     connect(&fileManager, &FileManager::fileListSetup, [this](){
-        if (fileManager.getMode() == Close) return;
         ui->fileListWidget->clear();
+        if (fileManager.getMode() == Close) return;
         for (const QString &image: fileManager.allImageFiles()){
             ui->fileListWidget->addItem(FileManager::getNameWithExtension(image));
         }
@@ -576,6 +576,8 @@ bool MainWindow::switchFile(int idx)
         Point3D focusPos = canvas3d->getFocusPos();
         canvas3d->setFocusPos(Point3D(focusPos.x, focusPos.y, idx));
         return true;
+    }else{
+        throw "abnormal curCanvas";
     }
 }
 
@@ -684,7 +686,6 @@ qreal MainWindow::scaleFitWindow()
     int h2 = curCanvas->sizeUnscaled().height();
     qreal a2 = static_cast<qreal>(w2)/h2;
     return a2>=a1 ? static_cast<qreal>(w1)/w2 : static_cast<qreal>(h1)/h2;
-
 }
 
 void MainWindow::enableFileActions()

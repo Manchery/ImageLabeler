@@ -17,7 +17,9 @@ public:
 
     /*--------------------from CanvasBase (parent class)-------------------*/
     QSize minimumSizeHint() const override;
-    QSize sizeUnscaled() const override { return _sizeUnscaled; }
+    QSize sizeUnscaled() const override {
+        return _sizeUnscaled;
+    }
     /*--------------------from CanvasBase (parent class) END----------------*/
 
     void loadImagesZ(QStringList imagesFile);

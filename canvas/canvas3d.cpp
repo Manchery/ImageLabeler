@@ -20,6 +20,8 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     layout->addWidget(canvasZ, 0, 0);
     layout->addWidget(canvasX, 0, 1);
     layout->addWidget(canvasY, 1, 0);
+    layout->setHorizontalSpacing(10);
+    layout->setVerticalSpacing(10);
     layout->setSizeConstraint(QLayout::SetFixedSize);
     //! end layout
 
@@ -158,8 +160,12 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     for (auto file: imagesFile)
         imagesZ.push_back(QImage(file));
     focusPos = Point3D(imagesZ[0].width()/2,imagesZ[0].height()/2,0);
-    repaint();
-    _sizeUnscaled = layout->minimumSize();
+    update();
+
+    int leftMargin, rightMargin, topMargin, bottomMargin;
+    layout->getContentsMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin);
+    _sizeUnscaled = QSize(leftMargin + imagesZ[0].width() + layout->horizontalSpacing() + imagesZ.length() + rightMargin,
+            topMargin + imagesZ[0].height() + layout->verticalSpacing() + imagesZ.length() + bottomMargin);
 }
 
 void Canvas3D::keyPressEvent(QKeyEvent *event)
