@@ -1,5 +1,7 @@
 #include "labellistwidget.h"
-
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include <algorithm>
 
 LabelListWidget::LabelListWidget(QWidget *parent):QListWidget(parent){}
 
@@ -10,6 +12,21 @@ void LabelListWidget::mousePressEvent(QMouseEvent *event){
     } else {
         QListWidget::mousePressEvent(event);
     }
+}
+
+void LabelListWidget::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down){
+        auto items = selectedItems();
+        if (items.length()==1){
+            int idx = row(items[0]);
+            int newIdx = event->key()==Qt::Key_Down ? std::min(idx+1, count()-1) : std::max(idx-1,0);
+//            emit itemClicked(item(newIdx));
+            item(newIdx)->setSelected(true);
+            return;
+        }
+    }
+    QListWidget::keyPressEvent(event);
 }
 
 void LabelListWidget::addCustomItem(QString label, QColor color, bool visible){

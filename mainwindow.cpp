@@ -30,48 +30,49 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    fileRelatedActions << ui->actionSave
+                       << ui->actionSave_As
+                       << ui->actionClose
+                       << ui->actionLoad
+                       << ui->actionPrevious_Image
+                       << ui->actionNext_Image
+                       << ui->actionZoom_in
+                       << ui->actionZoom_out
+                       << ui->actionFit_Window;
+
     canvas2d = new Canvas2D(&labelManager, &annoContainer, ui->scrollArea);
     canvas2d->setVisible(true); canvas2d->setEnabled(true);
-    curCanvas = canvas2d;
 
     canvas3d = new Canvas3D(&labelManager, &annoContainer, ui->scrollArea);
     canvas3d->setVisible(false); canvas3d->setEnabled(false);
 
+    curCanvas = canvas2d;
     ui->scrollArea->setAlignment(Qt::AlignCenter);
-    ui->scrollArea->setWidget(canvas2d);
-//    ui->scrollArea->setWidgetResizable(true);
-
-    connect(canvas2d, &Canvas2D::modeChanged, this, &MainWindow::reportCanvasMode);
-    connect(canvas3d, &Canvas3D::modeChanged, this, &MainWindow::reportCanvasMode);
+    ui->scrollArea->setWidget(curCanvas);
 
     _setupToolBarAndStatusBar();
-
     _setupLabelManager();
-
     _setupAnnotationContainer();
-
     _setupFileManager();
 
-    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouse2dMoved);
-    connect(canvas3d, &Canvas3D::focus3dMoved, this, &MainWindow::reportMouse3dMoved);
-    connect(canvas3d, &Canvas3D::cursor3dMoved, this, &MainWindow::reportMouse3dMoved);
-//    connect(canvas2d, &Canvas2D::zoomRequest, this, &MainWindow::zoomRequest);
-    connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
+    canvas2d->changeTask(DETECTION); // DEFAULT TASK
+    unableFileActions();
 }
 
 void MainWindow::_setupToolBarAndStatusBar()
 {
     taskComboBox = new QComboBox(ui->mainToolBar);
     taskComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    taskComboBox->addItem("Detection ");
-    taskComboBox->addItem("Segmentation ");
-    taskComboBox->addItem("3D Detection ");
-    taskComboBox->addItem("3D Segmentation ");
+    taskComboBox->addItem(taskText.at(DETECTION));
+    taskComboBox->addItem(taskText.at(SEGMENTATION));
+    taskComboBox->addItem(taskText.at(DETECTION3D));
+    taskComboBox->addItem(taskText.at(SEGMENTATION3D));
     ui->mainToolBar->insertWidget(ui->actionOpen_File, taskComboBox);
 
     drawComboBox = new QComboBox(ui->mainToolBar);
     drawComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    drawComboBox->addItem("Rectangle");
+    drawComboBox->addItem(drawModeText.at(RECTANGLE));
     ui->mainToolBar->insertWidget(ui->actionOpen_File, drawComboBox);
 
     penWidthBox = new QSpinBox(ui->mainToolBar);
@@ -82,16 +83,24 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox->setEnabled(false); // because the defalut mode is detection
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
 
-    canvas2d->changeTask(DETECTION);
-
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
     connect(penWidthBox, SIGNAL(valueChanged(int)), curCanvas, SLOT(setPenWidth(int)));
 
-    unableFileActions();
+    connect(canvas2d, &Canvas2D::modeChanged, this, &MainWindow::reportCanvasMode);
+    connect(canvas3d, &Canvas3D::modeChanged, this, &MainWindow::reportCanvasMode);
 
     mousePosLabel = new QLabel();
     ui->statusBar->addPermanentWidget(mousePosLabel);
+    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouse2dMoved);
+    connect(canvas3d, &Canvas3D::focus3dMoved, this, &MainWindow::reportMouse3dMoved);
+    connect(canvas3d, &Canvas3D::cursor3dMoved, this, &MainWindow::reportMouse3dMoved);
+
+    connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
+    connect(ui->actionZoom_in, &QAction::triggered, [this](){ curCanvas->setScale(curCanvas->getScale()*1.1); });
+    connect(ui->actionZoom_out, &QAction::triggered, [this](){ curCanvas->setScale(curCanvas->getScale()*0.9); });
+    connect(ui->actionPrevious_Image, &QAction::triggered, [this](){ switchFile(fileManager.getCurIdx()-1); });
+    connect(ui->actionNext_Image, &QAction::triggered, [this](){ switchFile(fileManager.getCurIdx()+1); });
 }
 
 void MainWindow::_setupLabelManager()
@@ -239,6 +248,7 @@ void MainWindow::_setupAnnotationContainer()
 
     // anno changed: canvas repaint
     connect(&annoContainer, &AnnotationContainer::annoChanged, this, &MainWindow::canvasUpdate);
+    connect(&annoContainer, &AnnotationContainer::selectedChanged, this, &MainWindow::canvasUpdate);
 
     // anno changed: ui list change
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
@@ -296,17 +306,31 @@ void MainWindow::_setupFileManager()
         }
         ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true);
     });
+
     // click file item to switch image
-    connect(ui->fileListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *item){
-        int idx = ui->fileListWidget->row(item);
-        if (fileManager.getMode()==MultiImage){
-            if (!switchFile(idx)){
-                ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true); // redundent?
+    connect(ui->fileListWidget, &QListWidget::itemSelectionChanged, [this](){
+        auto items = ui->fileListWidget->selectedItems();
+        if (items.length()==1){
+            int idx = ui->fileListWidget->row(items[0]);
+            if (idx == fileManager.getCurIdx()) return;
+            if (fileManager.getMode()==MultiImage){
+                if (!switchFile(idx)){
+                    ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true); // redundent?
+                }
+            }else if (curCanvas==canvas3d){
+                switchFile(idx);
             }
-        }else if (curCanvas==canvas3d){
-            switchFile(idx);
+        }
+        // ui list move responding to selected item
+        if (ui->fileListWidget->count()<=1) return;
+        if (items.length()==1){
+            int row = ui->fileListWidget->row(items[0]);
+            auto scroll = ui->fileListWidget->verticalScrollBar();
+            scroll ->setValue(scroll->minimum()+
+                              (scroll->maximum()-scroll->minimum())*row/(ui->fileListWidget->count()-1));
         }
     });
+
     // ui list responding to focus move
     connect(canvas3d, &Canvas3D::focus3dMoved, [this](Point3D focus){
         fileManager.selectFile(focus.z);
@@ -318,12 +342,12 @@ void MainWindow::taskModeChanged()
 {
     QString text = taskComboBox->currentText();
 
-    if (text.startsWith("3D")){
+    if (is3dTask(text)){ // 3D
         ui->actionOpen_File->setEnabled(false);
         curCanvas = canvas3d;
         canvas2d->setVisible(false); canvas2d->setEnabled(false);
         canvas3d->setVisible(true); canvas3d->setEnabled(true);
-    }else{
+    }else{ // 2D
         ui->actionOpen_File->setEnabled(true);
         curCanvas = canvas2d;
         canvas2d->setVisible(true); canvas2d->setEnabled(true);
@@ -332,42 +356,36 @@ void MainWindow::taskModeChanged()
     ui->scrollArea->takeWidget();
     ui->scrollArea->setWidget(curCanvas);
 
-    if (text == "Detection ") canvas2d->changeTask(DETECTION);
-    if (text == "Segmentation ") canvas2d->changeTask(SEGMENTATION);
-    if (text == "3D Detection ") canvas3d->changeTask(DETECTION3D);
-    if (text == "3D Segmentation ") canvas3d->changeTask(SEGMENTATION3D);
+    if (text == taskText.at(DETECTION)) canvas2d->changeTask(DETECTION);
+    if (text == taskText.at(SEGMENTATION)) canvas2d->changeTask(SEGMENTATION);
+    if (text == taskText.at(DETECTION3D)) canvas3d->changeTask(DETECTION3D);
+    if (text == taskText.at(SEGMENTATION3D)) canvas3d->changeTask(SEGMENTATION3D);
 
-    if (text == "Detection " || text == "3D Detection "){
+    if (isDetectTask(text)){
         drawComboBox->clear();
-        drawComboBox->addItem("Rectangle");
-//        ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        drawComboBox->addItem(drawModeText.at(RECTANGLE));
         penWidthBox->setEnabled(false);
-    }else if (text == "Segmentation " || text == "3D Segmentation "){
+    }else if (isSegmentTask(text)){
         drawComboBox->clear();
-        drawComboBox->addItem("Circle Pen");
-        drawComboBox->addItem("Square Pen");
-        drawComboBox->addItem("Contour");
-        drawComboBox->addItem("Polygonal Contour");
+        drawComboBox->addItem(drawModeText.at(CIRCLEPEN));
+        drawComboBox->addItem(drawModeText.at(SQUAREPEN));
+        drawComboBox->addItem(drawModeText.at(CONTOUR));
+        drawComboBox->addItem(drawModeText.at(POLYGEN));
         penWidthBox->setEnabled(true);
-        //! TODO: add segmentation select mode
-//        ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
     }
 }
 
 void MainWindow::drawModeChanged()
 {
     QString text = drawComboBox->currentText();
+    if (text.isEmpty() || text.isNull()) return;
 
-    if (text=="Rectangle") curCanvas->changeDrawMode(RECTANGLE);
-    else if (text=="Circle Pen") curCanvas->changeDrawMode(CIRCLEPEN);
-    else if (text=="Square Pen") curCanvas->changeDrawMode(SQUAREPEN);
-    else if (text=="Contour") curCanvas->changeDrawMode(CONTOUR);
-    else if (text=="Polygonal Contour") curCanvas->changeDrawMode(POLYGEN);
+    curCanvas->changeDrawMode(getDrawModeFromText(text));
 
-    if (text=="Rectangle"||text=="Contour"||text=="Polygonal Contour"){
+    if (text==drawModeText.at(RECTANGLE) || text==drawModeText.at(CONTOUR) ||text==drawModeText.at(POLYGEN)){
         penWidthBox->setEnabled(false);
         penWidthBox->setValue(1);
-    }else if (text=="Circle Pen"||text=="Square Pen"){
+    }else { // CIRCLE PEN & SQUARE PEN
         penWidthBox->setEnabled(true);
         penWidthBox->setValue(curCanvas->getLastPenWidth());
     }
@@ -387,7 +405,8 @@ QString MainWindow::_labelRequest()
         if (dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
             newLabelRequest(newLabel);
-            return newLabel; // maybe empty?
+            return newLabel;
+            // maybe empty(newLabel==""), that also result in no anno added
         }else {
             return "";
         }
@@ -405,7 +424,6 @@ void MainWindow::getNewRect(QRect rect)
                                                  annoContainer.newInstanceIdForLabel(label));
     annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
-
 
 void MainWindow::getNewCube(Cuboid cube)
 {
@@ -436,7 +454,6 @@ void MainWindow::getNewStrokes(const QList<SegStroke> &strokes)
                                                  annoContainer.newInstanceIdForLabel(label));
     annoContainer.push_back(std::static_pointer_cast<AnnotationItem>(item));
 }
-
 
 void MainWindow::newLabelRequest(QString newLabel)
 {
@@ -486,7 +503,6 @@ void MainWindow::provideAnnoContextMenu(const QPoint &pos)
     QModelIndex modelIdx = ui->annoListWidget->indexAt(pos);
     if (!modelIdx.isValid()) return;
     int row = modelIdx.row();
-//    auto item = ui->annoListWidget->item(row);
 
     QMenu submenu;
     submenu.addAction("Delete");
@@ -498,12 +514,12 @@ void MainWindow::provideAnnoContextMenu(const QPoint &pos)
     }
 }
 
-QString MainWindow::getCurrentLabel()
+QString MainWindow::getCurrentLabel() const
 {
-    auto selected = ui->labelListWidget->selectedItems();
-    if (selected.length()==1){
-        return selected[0]->text();
-    }else if (selected.length()==0){
+    auto selectedLabels = ui->labelListWidget->selectedItems();
+    if (selectedLabels.length()==1){
+        return selectedLabels[0]->text();
+    }else if (selectedLabels.length()==0){
         return QString();
     }else {
         throw "selected mutiple label in the list";
@@ -526,7 +542,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
             canvas3d->keyPressEvent(event);
             return;
         }
-
     QMainWindow::keyPressEvent(event);
 }
 
@@ -537,6 +552,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
             canvas3d->keyReleaseEvent(event);
             return;
         }
+    QMainWindow::keyReleaseEvent(event);
 }
 
 void MainWindow::on_actionOpen_File_triggered()
@@ -588,26 +604,23 @@ void MainWindow::on_actionOpen_Dir_triggered()
         labelManager.allClear();
         annoContainer.allClear();
 
-        if (taskComboBox->currentText()=="Detection "){
+        if (curCanvas->getTaskMode() == DETECTION){
             canvas2d->loadPixmap(images[0]);
-            adjustFitWindow();
             fileManager.setAll(images, "_detect_annotations.json");
 
-        }else if (taskComboBox->currentText()=="Segmentation "){
+        }else if (curCanvas->getTaskMode() == SEGMENTATION){
             canvas2d->loadPixmap(images[0]);
-            adjustFitWindow();
             fileManager.setAll(images, "_segment_annotations.json");
 
-        }else if (taskComboBox->currentText()=="3D Detection "){
+        }else if (curCanvas->getTaskMode() == DETECTION3D){
             canvas3d->loadImagesZ(images);
-            adjustFitWindow();
             fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
 
-        }else if (taskComboBox->currentText()=="3D Segmentation "){
+        }else if (curCanvas->getTaskMode() == SEGMENTATION3D){
             canvas3d->loadImagesZ(images);
-            adjustFitWindow();
             fileManager.setAllDetection3D(images, "segment3d_labels_annotations.json");
         }
+        adjustFitWindow();
 
         _loadJsonFile(fileManager.getLabelFile());
         _loadJsonFile(fileManager.getCurrentOutputFile());
@@ -622,6 +635,13 @@ void MainWindow::on_actionLoad_triggered()
     QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
                                                      "Json Files (*.json)");
     _loadJsonFile(fileName);
+}
+
+void MainWindow::on_actionExit_triggered()
+{
+    on_actionClose_triggered();
+    if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
+    QApplication::quit();
 }
 
 bool MainWindow::switchFile(int idx)
@@ -654,16 +674,6 @@ bool MainWindow::switchFile(int idx)
     }
 }
 
-void MainWindow::on_actionPrevious_Image_triggered()
-{
-    switchFile(fileManager.getCurIdx()-1);
-}
-
-void MainWindow::on_actionNext_Image_triggered()
-{
-    switchFile(fileManager.getCurIdx()+1);
-}
-
 void MainWindow::on_actionClose_triggered()
 {
     if (fileManager.getMode() == Close) return;
@@ -681,14 +691,14 @@ void MainWindow::on_actionClose_triggered()
     unableFileActions();
 }
 
-
-void MainWindow::_saveSegmentImageResults(QString oldSuffix)
+void MainWindow::_saveSegmentImageResults()
 {
+    QString fileName = fileManager.getCurrentImageFile();
     QImage colorImage = drawColorImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
-    QString colorImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "color.png");
+    QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment_color.png";
     colorImage.save(colorImagePath);
     QImage labelIdImage = drawLabelIdImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
-    QString labelIdImagePath = FileManager::changeFileSuffix(fileManager.getCurrentOutputFile(), oldSuffix, "labelId.png");
+    QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment_labelId.png";
     labelIdImage.save(labelIdImagePath);
 }
 
@@ -717,20 +727,19 @@ void MainWindow::on_actionSave_triggered()
             FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
             if (canvas2d->getTaskMode()==SEGMENTATION)
-                _saveSegmentImageResults("labels_annotations.json");
+                _saveSegmentImageResults();
         }else if (fileManager.getMode()==MultiImage){
             QJsonObject labelJson;
             labelJson.insert("labels", labelManager.toJsonArray());
             FileManager::saveJson(labelJson, fileManager.getLabelFile());
-
             QJsonObject annoJson;
             annoJson.insert("annotations", annoContainer.toJsonArray());
             FileManager::saveJson(annoJson, fileManager.getCurrentOutputFile());
 
             if (canvas2d->getTaskMode()==SEGMENTATION)
-                _saveSegmentImageResults("annotations.json");
+                _saveSegmentImageResults();
         }
-    }else if (curCanvas == canvas3d){
+    }else if (curCanvas == canvas3d){ // 3D mode
         if (canvas3d->getTaskMode() == DETECTION3D){
             QJsonObject json;
             json.insert("labels", labelManager.toJsonArray());
@@ -762,38 +771,23 @@ void MainWindow::on_actionSave_As_triggered()
     FileManager::saveJson(json, fileName);
 }
 
-void MainWindow::on_actionZoom_in_triggered()
-{
-    curCanvas->setScale(curCanvas->getScale()*1.1);
-}
-
-void MainWindow::on_actionZoom_out_triggered()
-{
-    curCanvas->setScale(curCanvas->getScale()*0.9);
-}
-
 void MainWindow::enableFileActions()
 {
-    //! TODO: add more action
-    ui->actionSave->setEnabled(true);
-    ui->actionSave_As->setEnabled(true);
-    ui->actionLoad->setEnabled(true);
-    ui->actionClose->setEnabled(true);
+    for (auto action: fileRelatedActions)
+        action->setEnabled(true);
     taskComboBox->setEnabled(false);
 }
 
 void MainWindow::unableFileActions()
 {
-    ui->actionSave->setEnabled(false);
-    ui->actionSave_As->setEnabled(false);
-    ui->actionLoad->setEnabled(false);
-    ui->actionClose->setEnabled(false);
+    for (auto action: fileRelatedActions)
+        action->setEnabled(false);
     taskComboBox->setEnabled(true);
 }
 
-qreal MainWindow::scaleFitWindow()
+qreal MainWindow::scaleFitWindow() const
 {
-    int w1 = ui->scrollArea->width() - 2; // So that no scrollbars are generated.
+    int w1 = ui->scrollArea->width() - 2; // -2 So that no scrollbars are generated.
     int h1 = ui->scrollArea->height() - 2;
     qreal a1 = static_cast<qreal>(w1)/h1;
     int w2 = curCanvas->sizeUnscaled().width();
@@ -807,32 +801,10 @@ void MainWindow::adjustFitWindow()
     curCanvas->setScale(scaleFitWindow());
 }
 
-void MainWindow::zoomRequest(qreal delta, QPoint pos)
-{
-    int oldWidth = canvas2d->width();
-    if (delta>0){
-        canvas2d->setScale(canvas2d->getScale()*1.1);
-    } else {
-        canvas2d->setScale(canvas2d->getScale()*0.9);
-    }
-    int newWidth = canvas2d->width();
-    if (newWidth!=oldWidth){
-        qreal scale = static_cast<qreal>(newWidth) / oldWidth;
-        int xShift = static_cast<int>(round(pos.x() * scale)) - pos.x();
-        int yShift = static_cast<int>(round(pos.y() * scale)) - pos.y();
-        auto verticalBar = ui->scrollArea->verticalScrollBar();
-        verticalBar->setValue(verticalBar->value()+xShift);
-        auto horizontalBar = ui->scrollArea->horizontalScrollBar();
-        horizontalBar->setValue(horizontalBar->value()+yShift);
-    }
-}
-
 void MainWindow::reportMouse2dMoved(QPoint pos)
 {
     mousePosLabel->setText("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
-    //    ui->statusBar->showMessage("("+ QString::number(pos.x())+","+QString::number(pos.y())+")");
 }
-
 void MainWindow::reportMouse3dMoved()
 {
     QString text;
@@ -884,7 +856,6 @@ bool MainWindow::_checkUnsaved()
     }
     return true;
 }
-
 
 void MainWindow::canvasUpdate()
 {

@@ -179,7 +179,7 @@
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout_4">
      <item>
-      <widget class="QListWidget" name="fileListWidget"/>
+      <widget class="LabelListWidget" name="fileListWidget"/>
      </item>
     </layout>
    </widget>

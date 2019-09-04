@@ -2,7 +2,6 @@
 #define LABELLISTWIDGET_H
 
 #include <QListWidget>
-#include <QMouseEvent>
 #include <QString>
 #include <QColor>
 
@@ -11,6 +10,7 @@ class LabelListWidget : public QListWidget
 public:
     LabelListWidget(QWidget *parent=nullptr);
     void mousePressEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
 signals:
 public slots:
     void addCustomItem(QString label, QColor color, bool visible);

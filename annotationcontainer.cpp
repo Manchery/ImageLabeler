@@ -108,7 +108,8 @@ void AnnotationContainer::setSelected(int idx)
 {
     selectedIdx=idx;
 //    qDebug()<<"Select "<< idx;
-    emit annoChanged();
+//    emit annoChanged();
+    emit selectedChanged();
 }
 
 AnnoItemPtr AnnotationContainer::operator [](int idx) const{

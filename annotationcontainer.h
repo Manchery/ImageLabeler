@@ -50,6 +50,7 @@ public:
     int newInstanceIdForLabel(QString label);
 
 signals:
+    void selectedChanged();
     void annoChanged();
     void labelGiveBack(QString label);
 

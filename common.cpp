@@ -42,42 +42,56 @@ bool onRectRight(QPoint pos, QRect rect){
 
 bool onCubeTop(Point3D pos, Cuboid cube)
 {
-    return cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
-            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+    return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
+            cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.z - cube.minZ())<eps;
 }
 
 bool onCubeBottom(Point3D pos, Cuboid cube)
 {
-    return cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
-            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+    return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
+            cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.z - cube.maxZ())<eps;
 }
 
 bool onCubeLeft(Point3D pos, Cuboid cube)
 {
-    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
-            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+    return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
+            cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.x - cube.minX())<eps;
 }
 
 bool onCubeRight(Point3D pos, Cuboid cube)
 {
-    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
-            cube.minY()-eps<=pos.y && pos.y<=cube.maxY()+eps &&
+    return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
+            cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.x - cube.maxX())<eps;
 }
 
 bool onCubeFront(Point3D pos, Cuboid cube)
 {
-    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
-            cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+    return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
+            cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             abs(pos.y - cube.maxY())<eps;
 }
 
 bool onCubeBack(Point3D pos, Cuboid cube)
 {
-    return cube.minZ()-eps<=pos.z && pos.z<=cube.maxZ()+eps &&
-            cube.minX()-eps<=pos.x && pos.x<=cube.maxX()+eps &&
+    return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
+            cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             abs(pos.y - cube.minY())<eps;
+}
+
+DrawMode getDrawModeFromText(const QString &text){
+    for (auto item: drawModeText)
+        if (item.second==text)
+            return item.first;
+    throw "can not find text "+text+" for map drawModeText";
+}
+
+TaskMode getTaskFromText(const QString &text){
+    for (auto item: taskText)
+        if (item.second==text)
+            return item.first;
+    throw "can not find text "+text+" for map taskText";
 }

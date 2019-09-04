@@ -32,7 +32,6 @@ public:
 
 signals:
     void mouseMoved(QPoint pos);
-    void zoomRequest(qreal delta, QPoint pos);
 
     void newRectangleAnnotated(QRect newRect);
     void newStrokesAnnotated(const QList<SegStroke> &strokes);

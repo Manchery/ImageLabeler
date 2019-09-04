@@ -15,11 +15,11 @@ QString FileManager::changeExtensionName(QString fileName, QString newExtension)
     return newFileName;
 }
 
-QString FileManager::changeFileSuffix(QString fileName, QString oldSuffix, QString newSuffix)
-{
-    //! TODO: check oldSuffix exists
-    return fileName.replace(fileName.length()-oldSuffix.length(), oldSuffix.length(), newSuffix);
-}
+//QString FileManager::changeFileSuffix(QString fileName, QString oldSuffix, QString newSuffix)
+//{
+//    //! TO!DO: check oldSuffix exists
+//    return fileName.replace(fileName.length()-oldSuffix.length(), oldSuffix.length(), newSuffix);
+//}
 
 //example: "../../../abc.d" => "../../../"
 QString FileManager::getDir(QString fileName)

@@ -23,18 +23,18 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    QString getCurrentLabel();
 
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
 
+    qreal scaleFitWindow() const;
+    QString getCurrentLabel() const;
 
 public slots:
     void reportMouse2dMoved(QPoint pos);
     void reportMouse3dMoved();
     void reportCanvasMode(QString mode);
 
-    void zoomRequest(qreal delta, QPoint pos);
     void adjustFitWindow();
 
     void getNewRect(QRect rect);
@@ -49,6 +49,8 @@ public slots:
 
     bool switchFile(int idx);
 
+    void canvasUpdate();
+
 private slots:
     void on_actionOpen_File_triggered();
     void on_actionOpen_Dir_triggered();
@@ -56,18 +58,11 @@ private slots:
 
     void on_actionSave_triggered();
     void on_actionSave_As_triggered();
-
-    void on_actionPrevious_Image_triggered();
-    void on_actionNext_Image_triggered();
     void on_actionLoad_triggered();
 
-    //    void on_actionExit_triggered();
+    void on_actionExit_triggered();
 
-    void on_actionZoom_in_triggered();
-    void on_actionZoom_out_triggered();
     //    void on_actionAbout_triggered();
-
-    qreal scaleFitWindow();
 
     void enableFileActions();
     void unableFileActions();
@@ -75,17 +70,15 @@ private slots:
     void taskModeChanged();
     void drawModeChanged();
 
-    void canvasUpdate();
-
 private:
     Ui::MainWindow *ui;
-    CanvasBase *curCanvas;
+
+    CanvasBase *curCanvas; // always equals to canvas2d or canvas3d
     Canvas2D *canvas2d;
     Canvas3D *canvas3d;
 
     LabelManager labelManager;
     AnnotationContainer annoContainer;
-
     FileManager fileManager;
 
     QLabel *mousePosLabel;
@@ -93,9 +86,11 @@ private:
     QComboBox *drawComboBox;
     QSpinBox *penWidthBox;
 
+    QList<QAction*> fileRelatedActions;
+
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();
-    void _saveSegmentImageResults(QString oldSuffix);
+    void _saveSegmentImageResults();
     void _saveSegment3dImageResults();
 
     void _setupToolBarAndStatusBar();
