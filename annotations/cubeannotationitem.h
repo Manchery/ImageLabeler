@@ -3,7 +3,6 @@
 
 #include "annotationitem.h"
 #include <QRect>
-#include <algorithm>
 #include <QJsonArray>
 
 struct Point3D {

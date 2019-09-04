@@ -3,9 +3,6 @@
 
 #include <QLineEdit>
 #include <QListWidget>
-#include <QListWidgetItem>
-#include <QKeyEvent>
-#include <QtDebug>
 
 class LabelDialog;
 

@@ -1,7 +1,6 @@
 #ifndef CANVASBASE_H
 #define CANVASBASE_H
 
-#include "segannotationitem.h"
 #include <QObject>
 #include <QWidget>
 

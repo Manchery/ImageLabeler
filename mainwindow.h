@@ -8,7 +8,6 @@
 #include "annotationcontainer.h"
 #include "filemanager.h"
 #include <QMainWindow>
-#include <QMap>
 #include <QLabel>
 #include <QComboBox>
 #include <QSpinBox>

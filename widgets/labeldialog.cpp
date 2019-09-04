@@ -1,8 +1,12 @@
 #include "labeldialog.h"
 #include "ui_labeldialog.h"
 #include <QCompleter>
+#include <QListWidget>
 #include <QListWidgetItem>
 #include <QIcon>
+#include <QLineEdit>
+#include <QKeyEvent>
+#include <QtDebug>
 
 LabelDialog::LabelDialog(const LabelManager &labels, QWidget *parent) :
     QDialog(parent),

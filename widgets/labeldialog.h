@@ -1,13 +1,9 @@
 #ifndef LABELDIALOG_H
 #define LABELDIALOG_H
 
-#include "widgets/labellineedit.h"
+#include "labellineedit.h"
 #include "labelmanager.h"
 #include <QDialog>
-#include <QLineEdit>
-#include <QListWidget>
-#include <QKeyEvent>
-#include <QtDebug>
 
 namespace Ui {
 class LabelDialog;

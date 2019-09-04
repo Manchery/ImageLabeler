@@ -1,4 +1,5 @@
 #include "cubeannotationitem.h"
+#include <algorithm>
 
 void Point3D::fromJsonArray(const QJsonArray &array){
     x=array.at(0).isDouble()?static_cast<int>(array.at(0).toDouble()):0;

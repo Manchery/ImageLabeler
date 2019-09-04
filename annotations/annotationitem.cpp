@@ -1,7 +1,4 @@
 #include "annotationitem.h"
-#include <QImage>
-#include <QPainter>
-#include <QPainterPath>
 #include <QtDebug>
 
 AnnotationItem::AnnotationItem():label(), id(-1) {}

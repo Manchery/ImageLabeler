@@ -3,8 +3,12 @@
 #include "labeldialog.h"
 #include "canvas2d.h"
 #include "canvas3d.h"
-#include "utils.h"
+#include "common.h"
 #include "rectannotationitem.h"
+
+#include <QtDebug>
+#include <QtGlobal>
+
 #include <QLabel>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -12,15 +16,13 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QStringList>
-#include <QtDebug>
 #include <QColorDialog>
-#include <QtGlobal>
 #include <QKeyEvent>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QFile>
 #include <QFileInfo>
-#include <QComboBox>
+
 #include <cmath>
 
 MainWindow::MainWindow(QWidget *parent) :

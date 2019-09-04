@@ -36,11 +36,11 @@ SOURCES += \
         canvas/canvas3d.cpp \
         canvas/canvasbase.cpp \
         canvas/childcanvas3d.cpp \
+        common.cpp \
         filemanager.cpp \
         labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
-        utils.cpp \
         widgets/labeldialog.cpp \
         widgets/labellineedit.cpp \
         widgets/labellistwidget.cpp
@@ -55,10 +55,10 @@ HEADERS += \
         canvas/canvas3d.h \
         canvas/canvasbase.h \
         canvas/childcanvas3d.h \
+        common.h \
         filemanager.h \
         labelmanager.h \
         mainwindow.h \
-        utils.h \
         widgets/labeldialog.h \
         widgets/labellineedit.h \
         widgets/labellistwidget.h

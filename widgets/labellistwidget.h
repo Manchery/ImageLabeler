@@ -1,5 +1,5 @@
-#ifndef ESCAPABLELISTWIDGET_H
-#define ESCAPABLELISTWIDGET_H
+#ifndef LABELLISTWIDGET_H
+#define LABELLISTWIDGET_H
 
 #include <QListWidget>
 #include <QMouseEvent>
@@ -28,4 +28,4 @@ private:
     QListWidgetItem* _findItemByText(QString label);
 };
 
-#endif // ESCAPABLELISTWIDGET_H
+#endif // LABELLISTWIDGET_H

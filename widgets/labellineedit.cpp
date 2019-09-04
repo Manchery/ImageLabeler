@@ -1,4 +1,7 @@
 #include "labellineedit.h"
+#include <QListWidgetItem>
+#include <QKeyEvent>
+#include <QtDebug>
 #include <algorithm>
 
 LabelLineEdit::LabelLineEdit(QWidget *parent):QLineEdit(parent)

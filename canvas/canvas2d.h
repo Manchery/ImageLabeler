@@ -1,8 +1,9 @@
-#ifndef CANVAS_H
-#define CANVAS_H
+#ifndef CANVAS2D_H
+#define CANVAS2D_H
 
 #include "canvasbase.h"
-#include "utils.h"
+#include "segannotationitem.h"
+#include "common.h"
 #include <QRect>
 
 class Canvas2D : public CanvasBase
@@ -83,4 +84,4 @@ private:
     QList<SegStroke> curStrokes;
 };
 
-#endif // CANVAS_H
+#endif // CANVAS2D_H

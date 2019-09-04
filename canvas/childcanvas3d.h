@@ -1,9 +1,9 @@
-#ifndef CANVAS2D_H
-#define CANVAS2D_H
+#ifndef CHILDCANVAS3D_H
+#define CHILDCANVAS3D_H
 
 #include "cubeannotationitem.h"
 #include "segannotationitem.h"
-#include "utils.h"
+#include "common.h"
 #include <QWidget>
 #include <QPixmap>
 #include <QImage>
@@ -84,4 +84,4 @@ private:
     SegStroke3D curStroke;
 };
 
-#endif // CANVAS2D_H
+#endif // CHILDCANVAS3D_H

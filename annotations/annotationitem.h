@@ -4,8 +4,6 @@
 #include "labelmanager.h"
 #include <QString>
 #include <QJsonObject>
-#include <QSize>
-#include <QList>
 
 class AnnotationItem
 {

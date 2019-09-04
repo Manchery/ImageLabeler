@@ -2,6 +2,7 @@
 #define CANVAS3D_H
 
 #include "cubeannotationitem.h"
+#include "segannotationitem.h"
 #include "canvasbase.h"
 #include "childcanvas3d.h"
 #include <QWidget>

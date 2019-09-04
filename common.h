@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include "cubeannotationitem.h"
 #include <QList>
@@ -36,4 +36,4 @@ extern bool onCubeBack(Point3D pos, Cuboid cube);
 
 const int DEFAULT_PEN_WIDTH=15;
 
-#endif // UTILS_H
+#endif // COMMON_H
