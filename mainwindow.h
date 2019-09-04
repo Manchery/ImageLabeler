@@ -95,6 +95,7 @@ private:
     void _loadJsonFile(QString fileName);
     bool _checkUnsaved();
     void _saveSegmentImageResults(QString oldSuffix);
+    void _saveSegment3dImageResults();
 
     void _setupToolBarAndStatusBar();
     void _setupLabelManager();

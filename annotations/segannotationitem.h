@@ -66,8 +66,11 @@ using SegAnnotationItem = Basic_SegAnnotationItem<SegStroke>;
 using Seg3DAnnotationItem = Basic_SegAnnotationItem<SegStroke3D>;
 
 class AnnotationContainer;
-extern QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager);
-extern QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoContainer, LabelManager *pLabelManager);
+extern QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContainer, const LabelManager *pLabelManager);
+extern QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoContainer, const LabelManager *pLabelManager);
+
+extern QImage drawColorImage3d(int zCoordinate, bool *hasContent, const QSize &size, const AnnotationContainer *pAnnoContainer, const LabelManager *pLabelManager);
+extern QImage drawLabelIdImage3d(int zCoordinate, bool *hasContent, const QSize &size, const AnnotationContainer *pAnnoContainer, const LabelManager *pLabelManager);
 
 
 #endif // SEGANNOTATIONITEM_H

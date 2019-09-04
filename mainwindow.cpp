@@ -557,7 +557,8 @@ void MainWindow::on_actionOpen_Dir_triggered()
         if (!dirName.endsWith('/')) dirName+="/";
         QStringList tmp;
         for (auto &image: images){
-            if (!image.endsWith("_segment_color.png") && !image.endsWith("_segment_labelId.png"))
+            if (!image.endsWith("_segment_color.png") && !image.endsWith("_segment_labelId.png") &&
+                    !image.endsWith("_segment3d_color.png") && !image.endsWith("_segment3d_labelId.png"))
                 tmp.push_back(dirName+image);
         }
         images = tmp;
@@ -669,6 +670,21 @@ void MainWindow::_saveSegmentImageResults(QString oldSuffix)
     labelIdImage.save(labelIdImagePath);
 }
 
+void MainWindow::_saveSegment3dImageResults()
+{
+    for (int i=0;i<fileManager.count();i++){
+        QString fileName = fileManager.imageFileNameAt(i);
+        bool hasColorContent = false;
+        QImage colorImage = drawColorImage3d(i, &hasColorContent, canvas3d->imageZSize(), &annoContainer, &labelManager);
+        QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment3d_color.png";
+        if (hasColorContent) colorImage.save(colorImagePath);
+        bool hasLabelContent = false;
+        QImage labelIdImage = drawLabelIdImage3d(i, &hasLabelContent, canvas3d->imageZSize(), &annoContainer, &labelManager);
+        QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment3d_labelId.png";
+        if (hasLabelContent) labelIdImage.save(labelIdImagePath);
+    }
+}
+
 void MainWindow::on_actionSave_triggered()
 {
     if (curCanvas == canvas2d){ // 2D mode
@@ -705,7 +721,7 @@ void MainWindow::on_actionSave_triggered()
             FileManager::saveJson(json, fileManager.getCurrentOutputFile());
 
             if (canvas3d->getTaskMode()==SEGMENTATION3D){
-                // image result
+                _saveSegment3dImageResults();
             }
         }
     }

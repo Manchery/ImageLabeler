@@ -27,6 +27,8 @@ public:
 
     void updateChildren();
 
+    QSize imageZSize() const { return canvasZ->image.size(); }
+
     ChildCanvas3D* childDrawingRect() const {
         if (canvasX->drawingRect()) return canvasX;
         if (canvasY->drawingRect()) return canvasY;

@@ -26,6 +26,7 @@ public:
     explicit FileManager(QString fileName, QString outputExtension = "json", QObject *parent = nullptr);
     explicit FileManager(QStringList fileNames, QString outputExtension = "json", QObject *parent = nullptr);
 
+    QString imageFileNameAt(int idx) const { return imageFiles[idx]; }
     bool hasChangeNotSaved() const;
     QString getCurrentImageFile() const;
     QString getCurrentOutputFile() const;
