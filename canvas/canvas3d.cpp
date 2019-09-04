@@ -29,17 +29,17 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     //! report focus move
     connect(canvasX, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.z = pos.x(); focusPos.y = pos.y();
-        updateImageForChild();
+        setImageForChild();
         emit focus3dMoved(focusPos);
     });
     connect(canvasY, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.x = pos.x(); focusPos.z = pos.y();
-        updateImageForChild();
+        setImageForChild();
         emit focus3dMoved(focusPos);
     });
     connect(canvasZ, &ChildCanvas3D::focusMoved, [this](QPoint pos){
         focusPos.x = pos.x(); focusPos.y = pos.y();
-        updateImageForChild();
+        setImageForChild();
         emit focus3dMoved(focusPos);
     });
     //! end focus move
@@ -106,7 +106,6 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
     });
 }
 
-
 void Canvas3D::mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child)
 {
     auto item = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
@@ -143,7 +142,7 @@ void Canvas3D::mouseMovedWhenSelected(Point3D cursorPos)
         case BOTTOMf:
             editingCube.setmaxZ(cursorPos.z); break;
         }
-        update();
+        updateChildren();
     }
 }
 
@@ -155,24 +154,17 @@ void Canvas3D::mouseReleasedWhenSelected()
     }
 }
 
-// this does no respond to focus move (need of speed), please use updateImageForChild when focus moved
-void Canvas3D::paintEvent(QPaintEvent *event)
+void Canvas3D::updateChildren()
 {
-    if (imagesZ.length()>0){
-        canvasX->update();
-        canvasY->update();
-        canvasZ->update();
-    }else{
-        QWidget::paintEvent(event);
-    }
+    canvasX->update(); canvasY->update(); canvasZ->update();
 }
 
-void Canvas3D::updateImageForChild()
+void Canvas3D::setImageForChild()
 {
     canvasZ->loadImage(imagesZ[focusPos.z]);
     canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
     canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
-    update();
+    updateChildren();
 }
 
 // perhaps the bottle-neck of running efficiency
@@ -208,7 +200,7 @@ void Canvas3D::repaintSegAnnotation()
         p.drawPixmap(0,0,colorMap);
     }
 
-    updateImageForChild();
+    setImageForChild();
 }
 
 void Canvas3D::close(){
@@ -216,7 +208,7 @@ void Canvas3D::close(){
     canvasX->loadImage(QImage());
     canvasY->loadImage(QImage());
     canvasZ->loadImage(QImage());
-    update();
+    updateChildren();
 }
 
 void Canvas3D::setScale(qreal newScale)
@@ -225,12 +217,12 @@ void Canvas3D::setScale(qreal newScale)
     canvasX->setScale(scale);
     canvasY->setScale(scale);
     canvasZ->setScale(scale);
-    update();
+    updateChildren();
 }
 
 void Canvas3D::setFocusPos(Point3D pos) {
     focusPos = pos;
-    updateImageForChild();
+    setImageForChild();
     emit focus3dMoved(pos);
 }
 
@@ -242,7 +234,7 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
     if (task == SEGMENTATION3D) initImagesZ = imagesZ;
 
     focusPos = Point3D(imagesZ[0].width()/2,imagesZ[0].height()/2,0);
-    updateImageForChild();
+    setImageForChild();
 
     int leftMargin, rightMargin, topMargin, bottomMargin;
     layout->getContentsMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin);
@@ -256,6 +248,7 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
         lastMode = mode;
         //!!! TODO: need some if to avoid breaking current operation
         changeCanvasMode(MOVE);
+        updateChildren();
         return;
     }
     if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter){
@@ -358,6 +351,7 @@ void Canvas3D::changeDrawMode(DrawMode _draw)
         curPenWidth = 1;
         break;
     }
+    updateChildren();
     emit modeChanged(modeString());
 }
 

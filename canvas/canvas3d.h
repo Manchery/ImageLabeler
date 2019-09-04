@@ -24,7 +24,8 @@ public:
 
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
-    void paintEvent(QPaintEvent *event) override;
+
+    void updateChildren();
 
     ChildCanvas3D* childDrawingRect() const {
         if (canvasX->drawingRect()) return canvasX;
@@ -58,7 +59,7 @@ public slots:
 
     void setFocusPos(Point3D pos);
 
-    void updateImageForChild();
+    void setImageForChild();
 
     void repaintSegAnnotation();
 

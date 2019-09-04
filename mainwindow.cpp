@@ -114,10 +114,14 @@ void MainWindow::_setupLabelManager()
 
     // label changed -> canvas repaint (TODO: 2d or 3d /FINISHED?
     connect(&labelManager, &LabelManager::configChanged, [this](){
-        if (curCanvas==canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D){
-            canvas3d->repaintSegAnnotation();
+        if (curCanvas==canvas3d){
+            if (canvas3d->getTaskMode() == DETECTION3D){
+                canvas3d->updateChildren();
+            }else{
+                canvas3d->repaintSegAnnotation();
+            }
         }else {
-            curCanvas->update();
+            canvas2d->update();
         }
     });
 
@@ -214,10 +218,14 @@ void MainWindow::_setupAnnotationContainer()
 
     // anno changed: canvas repaint (TODO: 2d or 3d /FINISHED?
     connect(&annoContainer, &AnnotationContainer::dataChanged, [this](){
-        if (curCanvas==canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D){
-            canvas3d->repaintSegAnnotation();
+        if (curCanvas==canvas3d){
+            if (canvas3d->getTaskMode() == DETECTION3D){
+                canvas3d->updateChildren();
+            }else{
+                canvas3d->repaintSegAnnotation();
+            }
         }else {
-            curCanvas->update();
+            canvas2d->update();
         }
     });
 
