@@ -126,15 +126,14 @@ void Canvas2D::paintEvent(QPaintEvent *event)
 
             p.end();
         }else if (mode == SELECT){
-            //! TODO: add segmentation select mode
             QPixmap colorMap(pixmap.size());
             colorMap.fill(QColor(0,0,0,0));
             QPainter p0(&colorMap);
-
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
                 QString label = item->label;
-                QColor color = (i==pAnnoContainer->getSelectedIdx())?(*pLabelManager)[label].color:QColor(0,0,0,0);
+                QColor color = (*pLabelManager)[label].color;
+                color = i == pAnnoContainer->getSelectedIdx() ? color: color.lighter();
                 for (auto stroke: item->strokes)
                     stroke.drawSelf(p0,color);
             }

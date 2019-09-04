@@ -76,6 +76,8 @@ private slots:
     void taskModeChanged();
     void drawModeChanged();
 
+    void canvasUpdate();
+
 private:
     Ui::MainWindow *ui;
     CanvasBase *curCanvas;

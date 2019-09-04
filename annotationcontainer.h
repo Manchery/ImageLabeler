@@ -17,7 +17,7 @@ using AnnoItemPtr = std::shared_ptr<AnnotationItem>;
 
 // Op means Operator
 enum ContainerOp{
-    PUSH, REMOVE, MODIFY
+    PUSH, REMOVE, MODIFY, SWAP
 };
 
 struct AnnotationOp{
@@ -26,6 +26,7 @@ struct AnnotationOp{
     // op == PUSH: item = the item pushed
     // op == REMOVE: idx == index of the removed, item = the removed
     // op == MODIFY: idx == index of the modified, item = before modify, item2 == after modify
+    // op == SWAP: idx & idx+1 are swapped
     AnnoItemPtr item, item2;
 };
 
@@ -43,13 +44,13 @@ public:
     void fromJsonObject(QJsonObject json, TaskMode task);
     void fromJsonArray(QJsonArray json, TaskMode task);
 
-    int getSelectedIdx() const;
-    AnnoItemPtr getSelectedItem() const;
+    int getSelectedIdx() const { return selectedIdx; }
+    AnnoItemPtr getSelectedItem() const { return items[selectedIdx]; }
 
     int newInstanceIdForLabel(QString label);
 
 signals:
-    void dataChanged();
+    void annoChanged();
     void labelGiveBack(QString label);
 
     void UndoEnableChanged(bool);
@@ -59,11 +60,13 @@ signals:
     void AnnotationInserted(AnnoItemPtr item, int idx);
     void AnnotationModified(AnnoItemPtr item, int idx);
     void AnnotationRemoved(int idx);
+    void AnnotationSwap(int idx);
     void allCleared();
 public slots:
     void push_back(const AnnoItemPtr &item);
     void remove(int idx);
     void modify(int idx,const AnnoItemPtr &item);
+    void swap(int idx); // swap idx & idx+1
 
     void allClear();
 
@@ -78,7 +81,7 @@ private:
     // ops at [0,curVersion] are done, curVersion are valid in [-1, ops.len-1]
     int curVersion;
 
-    int selectedIdx;
+    int selectedIdx; // -1
 
     void checkIdx(int idx) const;
     void pushBackOp(AnnotationOp op);

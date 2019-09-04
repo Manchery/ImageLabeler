@@ -66,13 +66,13 @@ void LabelManager::addLabel(QString label, QColor color, bool visible,int id){
     if (id==-1) id=++currentMaxId; else currentMaxId = std::max(id, currentMaxId);
     labels[label] = LabelProperty(label, color, visible, id);
     emit labelAdded(label, color, visible, id);
-    emit configChanged();
+    emit labelChanged();
 }
 
 void LabelManager::removeLabel(QString label){
     labels.remove(label);
     emit labelRemoved(label);
-    emit configChanged();
+    emit labelChanged();
 }
 
 void LabelManager::setColor(QString label, QColor color){
@@ -80,7 +80,7 @@ void LabelManager::setColor(QString label, QColor color){
     if (labels[label].color != color){
         labels[label].color = color;
         emit colorChanged(label, color);
-        emit configChanged();
+        emit labelChanged();
     }
 }
 
@@ -89,7 +89,7 @@ void LabelManager::setVisible(QString label, bool visible){
     if (labels[label].visible != visible){
         labels[label].visible = visible;
         emit visibelChanged(label, visible);
-        emit configChanged();
+        emit labelChanged();
     }
 }
 

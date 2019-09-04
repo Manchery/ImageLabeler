@@ -38,7 +38,7 @@ public:
     void fromJsonObject(QJsonObject json);
 
 signals:
-    void configChanged();
+    void labelChanged();
     void labelRemoved(QString label);
     void labelAdded(QString label, QColor color, bool visibile,int id);
     void visibelChanged(QString label, bool visible);

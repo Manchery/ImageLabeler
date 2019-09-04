@@ -185,6 +185,9 @@ void Canvas3D::repaintSegAnnotation()
         for (auto item: segItems){
             QString label = item->label;
             QColor color = pLabelManager->getColor(label);
+            if (mode == SELECT){
+                color = item == pAnnoContainer->getSelectedItem() ? color: color.lighter();
+            }
             for (auto stroke: item->strokes)
                 if (stroke.z==i)
                     stroke.drawSelf(p0, color);

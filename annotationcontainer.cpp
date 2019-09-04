@@ -3,6 +3,7 @@
 #include "segannotationitem.h"
 #include "cubeannotationitem.h"
 #include <QtDebug>
+#include <algorithm>
 using std::shared_ptr;
 
 AnnotationContainer::AnnotationContainer(QObject *parent) : QObject(parent), curVersion(-1), selectedIdx(-1) {
@@ -14,7 +15,7 @@ void AnnotationContainer::push_back(const AnnoItemPtr &item) {
     items.push_back(item);
 
     emit AnnotationAdded(item);
-    emit dataChanged();
+    emit annoChanged();
     emitUndoRedoEnable();
 }
 
@@ -24,7 +25,7 @@ void AnnotationContainer::remove(int idx){
     items.removeAt(idx);
 
     emit AnnotationRemoved(idx);
-    emit dataChanged();
+    emit annoChanged();
     emitUndoRedoEnable();
 }
 
@@ -34,7 +35,21 @@ void AnnotationContainer::modify(int idx, const AnnoItemPtr &item){
     items[idx] = item;
 
     emit AnnotationModified(item, idx);
-    emit dataChanged();
+    emit annoChanged();
+    emitUndoRedoEnable();
+}
+
+// swap idx & idx+1
+void AnnotationContainer::swap(int idx)
+{
+    checkIdx(idx); checkIdx(idx+1);
+    pushBackOp(AnnotationOp{SWAP, idx, nullptr, nullptr});
+    std::swap(items[idx], items[idx+1]);
+    if (selectedIdx == idx) selectedIdx = idx+1;
+    else if (selectedIdx == idx+1) selectedIdx = idx;
+
+    emit AnnotationSwap(idx);
+    emit annoChanged();
     emitUndoRedoEnable();
 }
 
@@ -53,8 +68,13 @@ void AnnotationContainer::redo(){
     }else if (op.opClass==MODIFY){
         emit AnnotationModified(op.item2, op.idx);
         items[op.idx] = op.item2;
+    }else if (op.opClass==SWAP){
+        std::swap(items[op.idx], items[op.idx+1]);
+        if (selectedIdx == op.idx) selectedIdx = op.idx+1;
+        else if (selectedIdx == op.idx+1) selectedIdx = op.idx;
+        emit AnnotationSwap(op.idx);
     }
-    emit dataChanged();
+    emit annoChanged();
     emitUndoRedoEnable();
 }
 
@@ -74,8 +94,13 @@ void AnnotationContainer::undo(){
     }else if (op.opClass==MODIFY){
         emit AnnotationModified(op.item, op.idx);
         items[op.idx] = op.item;
+    }else if (op.opClass==SWAP){
+        std::swap(items[op.idx], items[op.idx+1]);
+        if (selectedIdx == op.idx) selectedIdx = op.idx+1;
+        else if (selectedIdx == op.idx+1) selectedIdx = op.idx;
+        emit AnnotationSwap(op.idx);
     }
-    emit dataChanged();
+    emit annoChanged();
     emitUndoRedoEnable();
 }
 
@@ -83,7 +108,7 @@ void AnnotationContainer::setSelected(int idx)
 {
     selectedIdx=idx;
 //    qDebug()<<"Select "<< idx;
-    emit dataChanged();
+    emit annoChanged();
 }
 
 AnnoItemPtr AnnotationContainer::operator [](int idx) const{
@@ -145,10 +170,6 @@ void AnnotationContainer::fromJsonArray(QJsonArray json, TaskMode task)
         }
     }
 }
-
-int AnnotationContainer::getSelectedIdx() const { return selectedIdx; }
-
-AnnoItemPtr AnnotationContainer::getSelectedItem() const { return items[selectedIdx]; }
 
 int AnnotationContainer::newInstanceIdForLabel(QString label){
     int maxId=-1;

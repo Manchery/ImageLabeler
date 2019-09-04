@@ -112,18 +112,8 @@ void MainWindow::_setupLabelManager()
                 }
             });
 
-    // label changed -> canvas repaint (TODO: 2d or 3d /FINISHED?
-    connect(&labelManager, &LabelManager::configChanged, [this](){
-        if (curCanvas==canvas3d){
-            if (canvas3d->getTaskMode() == DETECTION3D){
-                canvas3d->updateChildren();
-            }else{
-                canvas3d->repaintSegAnnotation();
-            }
-        }else {
-            canvas2d->update();
-        }
-    });
+    // label changed -> canvas repaint
+    connect(&labelManager, &LabelManager::labelChanged, this, &MainWindow::canvasUpdate);
 
     // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
@@ -157,16 +147,48 @@ void MainWindow::_setupAnnotationContainer()
     ui->annoListWidget->setSortingEnabled(false);
     ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
+    // move button only enable when segment and selected
+    ui->pushButton_moveUp->setEnabled(false);
+    ui->pushButton_moveDown->setEnabled(false);
+    connect(ui->pushButton_moveUp, &QPushButton::clicked, [this](){
+        int idx = annoContainer.getSelectedIdx();
+        if (idx!=-1 && idx!=0){
+            annoContainer.swap(idx-1);
+        }
+    });
+    connect(ui->pushButton_moveDown, &QPushButton::clicked, [this](){
+        int idx = annoContainer.getSelectedIdx();
+        if (idx!=-1 && idx!=annoContainer.length()-1){
+            annoContainer.swap(idx);
+        }
+    });
+
     // select a anno to edit it
     connect(ui->annoListWidget, &QListWidget::itemSelectionChanged, [this](){
         auto items = ui->annoListWidget->selectedItems();
         if (items.length()==0){
-            annoContainer.setSelected(-1);
             curCanvas->changeCanvasMode(DRAW);
+            annoContainer.setSelected(-1);
+            if (curCanvas->getTaskMode() == SEGMENTATION || curCanvas->getTaskMode() == SEGMENTATION3D){
+                ui->pushButton_moveUp->setEnabled(false);
+                ui->pushButton_moveDown->setEnabled(false);
+            }
         }else{
-            annoContainer.setSelected(ui->annoListWidget->row(items[0]));
             curCanvas->changeCanvasMode(SELECT);
+            annoContainer.setSelected(ui->annoListWidget->row(items[0]));
+            if (curCanvas->getTaskMode() == SEGMENTATION || curCanvas->getTaskMode() == SEGMENTATION3D){
+                ui->pushButton_moveUp->setEnabled(true);
+                ui->pushButton_moveDown->setEnabled(true);
+            }
+            if (curCanvas->getTaskMode() == SEGMENTATION3D){
+                auto item = Seg3DAnnotationItem::castPointer(annoContainer.getSelectedItem());
+                int z = item->strokes[0].z;
+                switchFile(z);
+            }
         }
+        // redundent
+//        if (curCanvas == canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D)
+//            canvas3d->repaintSegAnnotation();
     });
     connect(ui->annoListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *_item){
         if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
@@ -195,11 +217,9 @@ void MainWindow::_setupAnnotationContainer()
     // request from canvas
     connect(canvas2d, &Canvas2D::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas2d, &Canvas2D::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
-    connect(canvas3d, &Canvas3D::newStrokes3DAnnotated, this, &MainWindow::getNewStrokes3D);
-
     connect(canvas3d, &Canvas3D::newCubeAnnotated, this, &MainWindow::getNewCube);
-
-    // request from canvas only for bbox, not segmentation
+    connect(canvas3d, &Canvas3D::newStrokes3DAnnotated, this, &MainWindow::getNewStrokes3D);
+    // request from canvas, only for bbox, not segmentation
     connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
@@ -207,7 +227,6 @@ void MainWindow::_setupAnnotationContainer()
                                                      annoContainer.getSelectedItem()->id);
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
-
     connect(canvas3d, &Canvas3D::removeCubeRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas3d, &Canvas3D::modifySelectedCubeRequest, [this](int idx, Cuboid cube){
         std::shared_ptr<CubeAnnotationItem> item =
@@ -216,20 +235,10 @@ void MainWindow::_setupAnnotationContainer()
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
-    // anno changed: canvas repaint (TODO: 2d or 3d /FINISHED?
-    connect(&annoContainer, &AnnotationContainer::dataChanged, [this](){
-        if (curCanvas==canvas3d){
-            if (canvas3d->getTaskMode() == DETECTION3D){
-                canvas3d->updateChildren();
-            }else{
-                canvas3d->repaintSegAnnotation();
-            }
-        }else {
-            canvas2d->update();
-        }
-    });
+    // anno changed: canvas repaint
+    connect(&annoContainer, &AnnotationContainer::annoChanged, this, &MainWindow::canvasUpdate);
 
-    // anno changed: ui list changed
+    // anno changed: ui list change
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
         for (int i=0;i<ui->annoListWidget->count();i++){
             auto item = ui->annoListWidget->item(i);
@@ -251,6 +260,17 @@ void MainWindow::_setupAnnotationContainer()
     });
     connect(&annoContainer, &AnnotationContainer::allCleared,
             ui->annoListWidget, &QListWidget::clear);
+    connect(&annoContainer, &AnnotationContainer::AnnotationSwap, [this](int idx){
+        int selectedIdx = annoContainer.getSelectedIdx();
+
+        auto item = ui->annoListWidget->takeItem(idx);
+        ui->annoListWidget->insertItem(idx+1, item);
+
+        if (selectedIdx == idx)
+            ui->annoListWidget->item(idx)->setSelected(true);
+        else if (selectedIdx == idx+1)
+            ui->annoListWidget->item(idx+1)->setSelected(true);
+    });
 }
 
 void MainWindow::_setupFileManager()
@@ -258,8 +278,8 @@ void MainWindow::_setupFileManager()
     ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     // set change not saved, to warning when close
-    connect(&labelManager, &LabelManager::configChanged, &fileManager, &FileManager::setChangeNotSaved);
-    connect(&annoContainer, &AnnotationContainer::dataChanged, &fileManager, &FileManager::setChangeNotSaved);
+    connect(&labelManager, &LabelManager::labelChanged, &fileManager, &FileManager::setChangeNotSaved);
+    connect(&annoContainer, &AnnotationContainer::annoChanged, &fileManager, &FileManager::setChangeNotSaved);
 
     // sync prev/next action enable
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
@@ -318,7 +338,7 @@ void MainWindow::taskModeChanged()
     if (text == "Detection " || text == "3D Detection "){
         drawComboBox->clear();
         drawComboBox->addItem("Rectangle");
-        ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+//        ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         penWidthBox->setEnabled(false);
     }else if (text == "Segmentation " || text == "3D Segmentation "){
         drawComboBox->clear();
@@ -328,7 +348,7 @@ void MainWindow::taskModeChanged()
         drawComboBox->addItem("Polygonal Contour");
         penWidthBox->setEnabled(true);
         //! TODO: add segmentation select mode
-        ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
+//        ui->annoListWidget->setSelectionMode(QAbstractItemView::NoSelection);
     }
 }
 
@@ -863,3 +883,16 @@ bool MainWindow::_checkUnsaved()
     return true;
 }
 
+
+void MainWindow::canvasUpdate()
+{
+    if (curCanvas==canvas3d){
+        if (canvas3d->getTaskMode() == DETECTION3D){
+            canvas3d->updateChildren();
+        }else{
+            canvas3d->repaintSegAnnotation();
+        }
+    }else {
+        canvas2d->update();
+    }
+}
