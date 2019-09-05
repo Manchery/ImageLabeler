@@ -40,22 +40,33 @@ void RectAnnotationItem::fromJsonObject(const QJsonObject &json){
             QJsonValue point1 = array.at(0);
             if (point1.isArray()){
                 QJsonArray point1Array = point1.toArray();
-                int x=point1Array.at(0).isDouble()?static_cast<int>(point1Array.at(0).toDouble()):0;
-                int y=point1Array.at(1).isDouble()?static_cast<int>(point1Array.at(1).toDouble()):0;
-                qDebug()<<"point1: "<<x<<" "<<y;
+                if (!point1Array.at(0).isDouble() || !point1Array.at(1).isDouble()){
+                    throw JsonException("value of points[0] is illegal");
+                }
+                int x=static_cast<int>(point1Array.at(0).toDouble());
+                int y=static_cast<int>(point1Array.at(1).toDouble());
                 rect.setTopLeft(QPoint(x,y));
+            }else{
+                throw JsonException("value of points[0] is illegal");
             }
             QJsonValue point2 = array.at(1);
             if (point2.isArray()){
                 QJsonArray point2Array = point2.toArray();
-                int x=point2Array.at(0).isDouble()?static_cast<int>(point2Array.at(0).toDouble()):0;
-                int y=point2Array.at(1).isDouble()?static_cast<int>(point2Array.at(1).toDouble()):0;
-                qDebug()<<"point2: "<<x<<" "<<y;
+                if (!point2Array.at(0).isDouble() || !point2Array.at(1).isDouble()){
+                    throw JsonException("value of points[1] is illegal");
+                }
+                int x=static_cast<int>(point2Array.at(0).toDouble());
+                int y=static_cast<int>(point2Array.at(1).toDouble());
                 rect.setBottomRight(QPoint(x,y));
+            }else{
+                throw JsonException("value of points[1] is illegal");
             }
+        }else{
+            throw JsonException("value of <points> is illegal");
         }
+    }else{
+        throw JsonException("no data <points>");
     }
-
 }
 
 void drawRectAnnotation(QPainter &p, const QRect &rect,

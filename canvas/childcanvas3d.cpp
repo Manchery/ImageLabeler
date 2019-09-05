@@ -164,6 +164,7 @@ void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
         mousePressingWhenMove = true;
     }
     QPoint pixPos = pixelPos(event->pos());
+    if (outOfPixmap(pixPos)) return;
     if (parentCanvas->task == DETECTION3D){
         if (parentCanvas->mode == DRAW){
             if (event->button()==Qt::LeftButton){
@@ -200,7 +201,6 @@ void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
         }
     } else if (parentCanvas->task == SEGMENTATION3D){
         if (parentCanvas->mode == DRAW){
-            //! TODO pixPos maybe out of image
             DrawMode drawMode = parentCanvas->drawMode;
             int curPenWidth = parentCanvas->curPenWidth;
             if (event->button()==Qt::LeftButton){

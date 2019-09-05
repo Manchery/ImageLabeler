@@ -1,6 +1,12 @@
 #include "annotationitem.h"
 #include <QtDebug>
 
+JsonException::JsonException(std::string message):message(message) {}
+
+const char *JsonException::what() const noexcept {
+    return message.c_str();
+}
+
 AnnotationItem::AnnotationItem():label(), id(-1) {}
 
 AnnotationItem::AnnotationItem(QString label, int id):label(label), id(id) {}
@@ -19,15 +25,21 @@ void AnnotationItem::fromJsonObject(const QJsonObject &json){
         QJsonValue value = json.value("label");
         if (value.isString()){
             label = value.toString();
-            qDebug()<<"label: "<<label;
+        }else {
+            throw JsonException("value of <label> is illegal");
         }
+    }else{
+        throw JsonException("no data <label>");
     }
     if (json.contains("id")){
         QJsonValue value = json.value("id");
         if (value.isDouble()){
             id = static_cast<int>(value.toDouble());
-            qDebug()<<"id: "<<id;
+        }else{
+            throw JsonException("value of <id> is illegal");
         }
+    }else{
+        throw JsonException("no data <id>");
     }
 }
 

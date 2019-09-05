@@ -95,6 +95,10 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
                 QString label = item->label;
+
+                if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
+                    continue;
+
                 QColor color = (*pLabelManager)[label].color;
                 for (auto stroke: item->strokes)
                     stroke.drawSelf(p0,color);
@@ -132,6 +136,10 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
                 QString label = item->label;
+
+                if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
+                    continue;
+
                 QColor color = (*pLabelManager)[label].color;
                 color = i == pAnnoContainer->getSelectedIdx() ? color: color.lighter();
                 for (auto stroke: item->strokes)
@@ -146,6 +154,16 @@ void Canvas2D::paintEvent(QPaintEvent *event)
     }
 }
 
+void Canvas2D::close() {
+    pixmap = QPixmap();
+    curPoints.clear();
+    editing=false;
+    strokeDrawing=false;
+    curStrokes.clear();
+    adjustSize();
+    update();
+}
+
 void Canvas2D::mousePressEvent(QMouseEvent *event)
 {
     if (pixmap.isNull()){
@@ -153,8 +171,9 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
         return;
     }
     QPoint pixPos = pixelPos(event->pos());
+    QPoint boundedPixPos = boundedPixelPos(event->pos());
 //    qDebug()<<"mouse press"<<pixPos.x()<<" "<<pixPos.y();
-    emit mouseMoved(pixPos);
+    emit mouseMoved(boundedPixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
             if (drawMode == DrawMode::RECTANGLE){
@@ -166,7 +185,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                             update();
                         }
                     } else if (curPoints.length()==2){
-                        curPoints[1] = boundedPixelPos(event->pos());
+                        curPoints[1] = boundedPixPos;
                         emit newRectangleAnnotated(QRect(curPoints[0], curPoints[1]).normalized());
                         curPoints.clear();
                     } else {
@@ -206,7 +225,6 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
         }
     }else if (task == TaskMode::SEGMENTATION){
         if (mode == DRAW){
-            //!TODO pixPos maybe out of image
             if (event->button()==Qt::LeftButton){
                 if (drawMode!=POLYGEN){
                     SegStroke stroke;
@@ -217,7 +235,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                     case CIRCLEPEN: stroke.type="circle_pen"; break;
                     default: throw "abnormal draw mode when segmentation";
                     }
-                    stroke.points.push_back(pixPos);
+                    stroke.points.push_back(boundedPixPos);
                     curStrokes.push_back(stroke);
                     strokeDrawing=true;
                     update();
@@ -226,13 +244,13 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                         SegStroke stroke;
                         stroke.penWidth = curPenWidth;
                         stroke.type = "contour";
-                        stroke.points.push_back(pixPos);
-                        stroke.points.push_back(pixPos);
+                        stroke.points.push_back(boundedPixPos);
+                        stroke.points.push_back(boundedPixPos);
                         curStrokes.push_back(stroke);
                         strokeDrawing=true;
                         update();
                     }else{
-                        curStrokes.back().points.push_back(pixPos);
+                        curStrokes.back().points.push_back(boundedPixPos);
                         update();
                     }
                 }

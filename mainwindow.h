@@ -30,6 +30,8 @@ public:
     qreal scaleFitWindow() const;
     QString getCurrentLabel() const;
 
+    bool eventFilter(QObject *watched, QEvent *event);
+
 public slots:
     void reportMouse2dMoved(QPoint pos);
     void reportMouse3dMoved();

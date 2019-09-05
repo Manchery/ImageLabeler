@@ -1,4 +1,5 @@
 #include "labelmanager.h"
+#include "annotationitem.h"
 #include <QtDebug>
 
 LabelManager::LabelManager(QObject *parent) : QObject(parent)
@@ -16,7 +17,7 @@ bool LabelManager::hasLabel(QString label) const {
 
 void LabelManager::checkLabel(QString label) const {
     if (labels.find(label)==labels.end())
-        throw "can not find label in labelconfig";
+        throw "can not find label "+ label +"in label manager";
 }
 
 QList<LabelProperty> LabelManager::getLabels() const {
@@ -38,13 +39,17 @@ QJsonArray LabelManager::toJsonArray(){
 
 void LabelManager::fromJsonArray(QJsonArray json)
 {
+    QList<LabelProperty> items;
     for (int i=0;i<json.size();i++){
         QJsonValue value = json.at(i);
         if (value.isObject()){
             LabelProperty item;
             item.fromJsonObject(value.toObject());
-            addLabel(item.label, item.color, item.visible, item.id);
+            items.push_back(item);
         }
+    }
+    for (auto item: items){
+        addLabel(item.label, item.color, item.visible, item.id);
     }
 }
 
@@ -55,10 +60,10 @@ void LabelManager::fromJsonObject(QJsonObject json)
         if (value.isArray())
             fromJsonArray(value.toArray());
         else {
-            throw "content <labels> in json is not array";
+            throw JsonException("value of <labels> is illegal");
         }
     }else{
-        qDebug()<<"no content <labels> in json";
+//        qDebug()<<"no content <labels> in json";
     }
 }
 
@@ -126,32 +131,50 @@ void LabelProperty::fromJsonObject(QJsonObject json)
         QJsonValue value = json.value("label");
         if (value.isString()){
             label = value.toString();
-            qDebug()<<"label: "<<label;
+        }else{
+            throw JsonException("value of <label> is illegal");
         }
+    }else{
+        throw JsonException("no data <label>");
     }
+
     if (json.contains("color")){
         QJsonValue value = json.value("color");
         if (value.isArray()){
             QJsonArray array = value.toArray();
-            int r=array.at(0).isDouble()?static_cast<int>(array.at(0).toDouble()):0;
-            int g=array.at(1).isDouble()?static_cast<int>(array.at(1).toDouble()):0;
-            int b=array.at(2).isDouble()?static_cast<int>(array.at(2).toDouble()):0;
+            if (!array.at(0).isDouble() || !array.at(1).isDouble() || !array.at(2).isDouble()){
+                throw JsonException("value of <color> is illegal");
+            }
+            int r=static_cast<int>(array.at(0).toDouble());
+            int g=static_cast<int>(array.at(1).toDouble());
+            int b=static_cast<int>(array.at(2).toDouble());
             color = QColor(r,g,b);
-            qDebug()<<"color: "<<r<<" "<<g<<" "<<b;
+        }else{
+            throw JsonException("value of <color> is illegal");
         }
+    }else{
+        throw JsonException("no data <color>");
     }
+
     if (json.contains("visible")){
         QJsonValue value = json.value("visible");
         if (value.isBool()){
             visible = value.toBool();
-            qDebug()<<"visible: "<<visible;
+        }else{
+            throw JsonException("value of <visible> is illegal");
         }
+    }else{
+        throw JsonException("no data <visible>");
     }
+
     if (json.contains("id")){
         QJsonValue value = json.value("id");
         if (value.isDouble()){
             id = static_cast<int>(value.toDouble());
-            qDebug()<<"id: "<<id;
+        }else{
+            throw JsonException("value of <id> is illegal");
         }
+    }else{
+        throw JsonException("no data <id>");
     }
 }

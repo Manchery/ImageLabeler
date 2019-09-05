@@ -27,7 +27,10 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    labelManager(this),
+    annoContainer(this),
+    fileManager(this)
 {
     ui->setupUi(this);
 
@@ -146,10 +149,7 @@ void MainWindow::_setupLabelManager()
         newLabelRequest(ui->lineEdit_addLabel->text());
         ui->lineEdit_addLabel->setText("");
     });
-    connect(ui->lineEdit_addLabel, &QLineEdit::returnPressed, [this](){
-        newLabelRequest(ui->lineEdit_addLabel->text());
-        ui->lineEdit_addLabel->setText("");
-    });
+    ui->lineEdit_addLabel->installEventFilter(this);
 }
 
 void MainWindow::_setupAnnotationContainer()
@@ -396,6 +396,20 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == ui->lineEdit_addLabel) {
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+            if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+                newLabelRequest(ui->lineEdit_addLabel->text());
+                ui->lineEdit_addLabel->setText("");
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 QString MainWindow::_labelRequest()
 {
@@ -570,9 +584,9 @@ void MainWindow::on_actionOpen_File_triggered()
         annoContainer.allClear();
 
         if (canvas2d->getTaskMode()==DETECTION){
-            fileManager.setAll(fileName, "_detect_labels_annotations.json");
+            fileManager.setSingleImage(fileName, SUFFIX_DET_LABEL_ANNO);
         }else if (canvas2d->getTaskMode()==SEGMENTATION){
-            fileManager.setAll(fileName, "_segment_labels_annotations.json");
+            fileManager.setSingleImage(fileName, SUFFIX_SEG_LABEL_ANNO);
         }
 
         _loadJsonFile(fileManager.getCurrentOutputFile());
@@ -595,8 +609,8 @@ void MainWindow::on_actionOpen_Dir_triggered()
         if (!dirName.endsWith('/')) dirName+="/";
         QStringList tmp;
         for (auto &image: images){
-            if (!image.endsWith("_segment_color.png") && !image.endsWith("_segment_labelId.png") &&
-                    !image.endsWith("_segment3d_color.png") && !image.endsWith("_segment3d_labelId.png"))
+            if (!image.endsWith(SUFFIX_SEG_COLOR) && !image.endsWith(SUFFIX_SEG_LABELID) &&
+                    !image.endsWith(SUFFIX_SEG3D_COLOR) && !image.endsWith(SUFFIX_SEG3D_LABELID))
                 tmp.push_back(dirName+image);
         }
         images = tmp;
@@ -606,19 +620,19 @@ void MainWindow::on_actionOpen_Dir_triggered()
 
         if (curCanvas->getTaskMode() == DETECTION){
             canvas2d->loadPixmap(images[0]);
-            fileManager.setAll(images, "_detect_annotations.json");
+            fileManager.setMultiImage(images, SUFFIX_DET_ANNO);
 
         }else if (curCanvas->getTaskMode() == SEGMENTATION){
             canvas2d->loadPixmap(images[0]);
-            fileManager.setAll(images, "_segment_annotations.json");
+            fileManager.setMultiImage(images, SUFFIX_SEG_ANNO);
 
         }else if (curCanvas->getTaskMode() == DETECTION3D){
             canvas3d->loadImagesZ(images);
-            fileManager.setAllDetection3D(images, "detect3d_labels_annotations.json");
+            fileManager.set3DImage(images, FILENAME_DET3D_LABEL_ANNO);
 
         }else if (curCanvas->getTaskMode() == SEGMENTATION3D){
             canvas3d->loadImagesZ(images);
-            fileManager.setAllDetection3D(images, "segment3d_labels_annotations.json");
+            fileManager.set3DImage(images, FILENAME_SEG3D_LABEL_ANNO);
         }
         adjustFitWindow();
 
@@ -639,8 +653,10 @@ void MainWindow::on_actionLoad_triggered()
 
 void MainWindow::on_actionExit_triggered()
 {
-    on_actionClose_triggered();
-    if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
+    if (ui->actionClose->isEnabled()){
+        on_actionClose_triggered();
+        if (fileManager.getMode()!=Close) return; // cancel is selected when unsaved
+    }
     QApplication::quit();
 }
 
@@ -658,6 +674,7 @@ bool MainWindow::switchFile(int idx)
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
 
+        canvas2d->close();
         canvas2d->loadPixmap(fileManager.getCurrentImageFile());
         adjustFitWindow();
 
@@ -680,11 +697,7 @@ void MainWindow::on_actionClose_triggered()
 
     if (!_checkUnsaved()) return;
 
-    if (curCanvas==canvas2d){
-        canvas2d->loadPixmap(QPixmap());
-    }else if (curCanvas == canvas3d){
-        canvas3d->close();
-    }
+    curCanvas->close();
     labelManager.allClear();
     annoContainer.allClear();
     fileManager.close();
@@ -695,10 +708,10 @@ void MainWindow::_saveSegmentImageResults()
 {
     QString fileName = fileManager.getCurrentImageFile();
     QImage colorImage = drawColorImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
-    QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment_color.png";
+    QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + SUFFIX_SEG_COLOR;
     colorImage.save(colorImagePath);
     QImage labelIdImage = drawLabelIdImage(canvas2d->getPixmap().size(), &annoContainer, &labelManager);
-    QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment_labelId.png";
+    QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + SUFFIX_SEG_LABELID;
     labelIdImage.save(labelIdImagePath);
 }
 
@@ -708,11 +721,11 @@ void MainWindow::_saveSegment3dImageResults()
         QString fileName = fileManager.imageFileNameAt(i);
         bool hasColorContent = false;
         QImage colorImage = drawColorImage3d(i, &hasColorContent, canvas3d->imageZSize(), &annoContainer, &labelManager);
-        QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment3d_color.png";
+        QString colorImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + SUFFIX_SEG3D_COLOR;
         if (hasColorContent) colorImage.save(colorImagePath);
         bool hasLabelContent = false;
         QImage labelIdImage = drawLabelIdImage3d(i, &hasLabelContent, canvas3d->imageZSize(), &annoContainer, &labelManager);
-        QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + "_segment3d_labelId.png";
+        QString labelIdImagePath = FileManager::getDir(fileName) + FileManager::getName(fileName) + SUFFIX_SEG3D_LABELID;
         if (hasLabelContent) labelIdImage.save(labelIdImagePath);
     }
 }
@@ -762,7 +775,7 @@ void MainWindow::on_actionSave_triggered()
 void MainWindow::on_actionSave_As_triggered()
 {
     QString fileName = QFileDialog::getSaveFileName(this, "open a file", "/",
-                                                    "Json Files (*json)");
+                                                    "Json Files (*.json)");
     if (!fileName.endsWith("json"))
         fileName+=".json";
     QJsonObject json;
@@ -822,9 +835,19 @@ void MainWindow::_loadJsonFile(QString fileName)
 {
     QFileInfo checkFile=QFileInfo(fileName);
     if (checkFile.exists() && checkFile.isFile()){
-        QJsonObject json = FileManager::readJson(fileName);
-        labelManager.fromJsonObject(json);
-        annoContainer.fromJsonObject(json, curCanvas->getTaskMode());
+        try {
+            QJsonObject json = FileManager::readJson(fileName);
+            labelManager.fromJsonObject(json);
+            annoContainer.fromJsonObject(json, curCanvas->getTaskMode());
+        } catch (FileException &e) {
+            QMessageBox::warning(this, "File Error", e.what());
+        } catch (JsonException &e) {
+            QString msg;
+            msg = QString("The saved json file is broken.\n")
+                    +"Error message: "+e.what()+"\n"
+                    +"Please check or delete the json file.\n";
+            QMessageBox::warning(this, "Json Error", msg);
+        }
     }
 }
 

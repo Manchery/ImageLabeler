@@ -2,9 +2,12 @@
 #include <algorithm>
 
 void Point3D::fromJsonArray(const QJsonArray &array){
-    x=array.at(0).isDouble()?static_cast<int>(array.at(0).toDouble()):0;
-    y=array.at(1).isDouble()?static_cast<int>(array.at(1).toDouble()):0;
-    z=array.at(2).isDouble()?static_cast<int>(array.at(2).toDouble()):0;
+    if (!array.at(0).isDouble() || !array.at(1).isDouble() || !array.at(2).isDouble()){
+        throw JsonException("value of point is illegal");
+    }
+    x=static_cast<int>(array.at(0).toDouble());
+    y=static_cast<int>(array.at(1).toDouble());
+    z=static_cast<int>(array.at(2).toDouble());
 }
 
 QJsonArray Point3D::toJsonArray() const {
@@ -38,15 +41,15 @@ bool Cuboid::contains(Point3D pos, int margin) const {
 
 void Cuboid::fromJsonArray(const QJsonArray &array)
 {
-    if (array.size()!=2) throw "abnormal array length for cuboid";
+    if (array.size()!=2) throw JsonException("abnormal array length of <points> for cuboid");
     if (array.at(0).isArray()){
         _topLeft.fromJsonArray(array.at(0).toArray());
     }else
-        throw "array[0] is not array for cuboid";
+        throw JsonException("points[0] is not array for cuboid");
     if (array.at(1).isArray()){
         _bottomRight.fromJsonArray(array.at(1).toArray());
     }else
-        throw "array[1] is not array for cuboid";
+        throw JsonException("points[1] is not array for cuboid");
 }
 
 QJsonArray Cuboid::toJsonArray() const
@@ -94,8 +97,10 @@ void CubeAnnotationItem::fromJsonObject(const QJsonObject &json)
         if (value.isArray()){
             cube.fromJsonArray(value.toArray());
         }else{
-            throw "points is not array for cubeAnnotationItem";
+            throw JsonException("<points> is not array for cubeAnnotationItem");
         }
+    }else{
+        throw JsonException("no data <points>");
     }
 }
 

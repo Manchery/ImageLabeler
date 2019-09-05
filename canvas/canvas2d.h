@@ -56,6 +56,7 @@ public slots:
             lastPenWidth = width;
         update();
     }
+    void close() override;
 
 private:
     QPixmap pixmap;

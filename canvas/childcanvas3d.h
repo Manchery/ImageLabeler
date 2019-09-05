@@ -58,6 +58,12 @@ public slots:
     void mouseReleaseEvent(QMouseEvent *event);
     void mouseDoubleClickEvent(QMouseEvent *event);
 
+    void close(){
+        image = QImage();
+        curPoints.clear();
+        strokeDrawing=false;
+    }
+
 private:
     const Canvas3D *parentCanvas;
     Axis axis;

@@ -48,6 +48,7 @@ public slots:
     virtual void changeDrawMode(DrawMode _draw) = 0;
 
     virtual void setPenWidth(int) = 0;
+    virtual void close() = 0;
 
 protected:
     qreal scale;

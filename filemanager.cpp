@@ -1,10 +1,20 @@
 #include "filemanager.h"
+#include "annotationitem.h"
+#include "common.h"
 #include <QtDebug>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QMessageBox>
 #include <QFile>
+
+FileException::FileException(std::string message):message(message) {}
+
+const char *FileException::what() const noexcept {
+    return message.c_str();
+}
+
+/*--------------------------FileManager static member-----------------------------*/
 
 QString FileManager::changeExtensionName(QString fileName, QString newExtension){
     QStringList list = fileName.split('.');
@@ -14,12 +24,6 @@ QString FileManager::changeExtensionName(QString fileName, QString newExtension)
     qDebug()<<newFileName;
     return newFileName;
 }
-
-//QString FileManager::changeFileSuffix(QString fileName, QString oldSuffix, QString newSuffix)
-//{
-//    //! TO!DO: check oldSuffix exists
-//    return fileName.replace(fileName.length()-oldSuffix.length(), oldSuffix.length(), newSuffix);
-//}
 
 //example: "../../../abc.d" => "../../../"
 QString FileManager::getDir(QString fileName)
@@ -52,7 +56,7 @@ void FileManager::saveJson(QJsonObject json, QString fileName)
     document.setObject(json);
     QFile file(fileName);
     if (!file.open(QFile::WriteOnly | QFile::Text)){
-        QMessageBox::warning(nullptr, "Warning", fileName+": file not open");
+        QMessageBox::warning(nullptr, "File Error", fileName+": file not open");
     }else{
         file.write(document.toJson());
         file.close();
@@ -63,7 +67,7 @@ QJsonObject FileManager::readJson(QString fileName)
 {
     QFile file(fileName);
     if (!file.open(QFile::ReadOnly | QFile::Text)){
-        QMessageBox::warning(nullptr, "Warning", fileName+": file not open");
+        throw FileException(std::string(QByteArray(fileName.toLocal8Bit()).data())+": file not open");
     }else{
         QString val = file.readAll();
         file.close();
@@ -72,31 +76,20 @@ QJsonObject FileManager::readJson(QString fileName)
             if (document.isObject()){
                 return document.object();
             }else{
-                throw "document is not object";
+                throw JsonException("document is not object");
             }
         }else{
-            throw "document read error";
+            throw JsonException("document read error");
         }
     }
 }
 
-/*--------------------------FileManager-----------------------------*/
+/*--------------------------FileManager non-static member-----------------------------*/
 
 FileManager::FileManager(QObject *parent) : QObject(parent)
 {
     changeNotSaved=false;
     mode = Close;
-}
-
-FileManager::FileManager(QString fileName, QString outputExtension, QObject *parent) : QObject(parent)
-{
-    setAll(fileName, outputExtension);
-}
-
-// assume fileNames are not empty
-FileManager::FileManager(QStringList fileNames, QString outputExtension, QObject *parent) : QObject(parent)
-{
-    setAll(fileNames, outputExtension);
 }
 
 bool FileManager::hasChangeNotSaved() const { return changeNotSaved; }
@@ -130,7 +123,7 @@ void FileManager::close()
 
 int FileManager::count(){ return imageFiles.length(); }
 
-void FileManager::setAll(QString fileName, QString outputExtension)
+void FileManager::setSingleImage(QString fileName, QString outputSuffix)
 {
     imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
@@ -138,12 +131,12 @@ void FileManager::setAll(QString fileName, QString outputExtension)
     mode = SingleImage;
     curIdx = 0;
     imageFiles<<fileName;
-    outputFiles<<getDir(fileName) + getName(fileName) + outputExtension;
+    outputFiles<<getDir(fileName) + getName(fileName) + outputSuffix;
     emitPrevNextEnable();
     emit fileListSetup();
 }
 
-void FileManager::setAll(QStringList fileNames, QString outputExtension)
+void FileManager::setMultiImage(QStringList fileNames, QString outputSuffix)
 {
     imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
@@ -153,14 +146,14 @@ void FileManager::setAll(QStringList fileNames, QString outputExtension)
     fileNames.sort();
     for (auto fileName: fileNames){
         imageFiles<<fileName;
-        outputFiles<<getDir(fileName) + getName(fileName) + outputExtension;
+        outputFiles<<getDir(fileName) + getName(fileName) + outputSuffix;
     }
-    labelFile = getDir(fileNames[0]) + "labels.json";
+    labelFile = getDir(fileNames[0]) + FILENAME_DIR_LABEL;
     emitPrevNextEnable();
     emit fileListSetup();
 }
 
-void FileManager::setAllDetection3D(QStringList fileNames, QString outputExtension)
+void FileManager::set3DImage(QStringList fileNames, QString outputSuffix)
 {
     imageFiles.clear(); outputFiles.clear(); labelFile = QString();
     changeNotSaved=false;
@@ -169,7 +162,7 @@ void FileManager::setAllDetection3D(QStringList fileNames, QString outputExtensi
     curIdx = 0;
     fileNames.sort();
     imageFiles = fileNames;
-    outputFiles << getDir(fileNames[0])+outputExtension;
+    outputFiles << getDir(fileNames[0])+outputSuffix;
     emitPrevNextEnable();
     emit fileListSetup();
 }
@@ -196,3 +189,5 @@ void FileManager::emitPrevNextEnable(){
     emit prevEnableChanged(curIdx>0);
     emit nextEnableChanged(curIdx<count()-1);
 }
+
+

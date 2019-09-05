@@ -14,15 +14,24 @@ void SegStroke::fromJsonObject(QJsonObject json){
         QJsonValue value = json.value("type");
         if (value.isString()){
             type = value.toString();
-            qDebug()<<"type: "<<type;
+            if (type!="contour" && type!="square_pen" && type!="circle_pen"){
+                throw JsonException("value of <type> is illegal");
+            }
+        }else{
+            throw JsonException("value of <type> is illegal");
         }
+    }else{
+        throw JsonException("no data <type>");
     }
     if (json.contains("pen_width")){
         QJsonValue value = json.value("pen_width");
         if (value.isDouble()){
             penWidth = static_cast<int>(value.toDouble());
-            qDebug()<<"pen_width: "<<penWidth;
+        }else{
+            throw JsonException("value of <pen_width> is illegal");
         }
+    }else{
+        throw JsonException("no data <pen_width>");
     }
     if (json.contains("points")){
         QJsonValue value = json.value("points");
@@ -31,12 +40,18 @@ void SegStroke::fromJsonObject(QJsonObject json){
             points.clear();
             for (int i=0;i<pointsArray.size();i++){
                 QJsonArray point = pointsArray.at(i).toArray();
-                int x=point.at(0).isDouble()?static_cast<int>(point.at(0).toDouble()):0;
-                int y=point.at(1).isDouble()?static_cast<int>(point.at(1).toDouble()):0;
-                points << QPoint(x,y);
-                qDebug()<<"point: "<<x<<" "<<y;
+                if (!point.at(0).isDouble() || !point.at(1).isDouble()){
+                    throw JsonException("value of <points> is illegal");
+                }
+                int x=static_cast<int>(point.at(0).toDouble());
+                int y=static_cast<int>(point.at(1).toDouble());
+                points.push_back(QPoint(x,y));
             }
+        }else{
+            throw JsonException("value of <points> is illegal");
         }
+    }else{
+        throw JsonException("no data <points>");
     }
 }
 
@@ -86,8 +101,12 @@ void SegStroke3D::fromJsonObject(QJsonObject json)
         QJsonValue value = json.value("z_coordinate");
         if (value.isDouble()){
             z = static_cast<int>(value.toDouble());
-            qDebug()<<"z_coordinate: "<<z;
+//            qDebug()<<"z_coordinate: "<<z;
+        }else{
+            throw JsonException("value of <z_coordinate> is illegal");
         }
+    }else{
+        throw JsonException("no data <z_coordinate>");
     }
 }
 

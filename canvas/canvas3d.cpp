@@ -184,6 +184,10 @@ void Canvas3D::repaintSegAnnotation()
         QPainter p0(&colorMap);
         for (auto item: segItems){
             QString label = item->label;
+
+            if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
+                continue;
+
             QColor color = pLabelManager->getColor(label);
             if (mode == SELECT){
                 color = item == pAnnoContainer->getSelectedItem() ? color: color.lighter();
@@ -208,9 +212,11 @@ void Canvas3D::repaintSegAnnotation()
 
 void Canvas3D::close(){
     imagesZ.clear();
-    canvasX->loadImage(QImage());
-    canvasY->loadImage(QImage());
-    canvasZ->loadImage(QImage());
+    curStrokes.clear();
+    editing=false;
+    canvasX->close();
+    canvasY->close();
+    canvasZ->close();
     updateChildren();
 }
 
@@ -258,6 +264,8 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
         if (task == SEGMENTATION3D && mode == DRAW){
             if (drawMode==POLYGEN){
                 canvasZ->strokeDrawing=false;
+                curStrokes.push_back(canvasZ->curStroke);
+                canvasZ->curStroke = SegStroke3D();
             }
             if (curStrokes.length()>0){
                 emit newStrokes3DAnnotated(curStrokes);

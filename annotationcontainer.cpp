@@ -107,7 +107,6 @@ void AnnotationContainer::undo(){
 void AnnotationContainer::setSelected(int idx)
 {
     selectedIdx=idx;
-//    qDebug()<<"Select "<< idx;
 //    emit annoChanged();
     emit selectedChanged();
 }
@@ -139,36 +138,40 @@ void AnnotationContainer::fromJsonObject(QJsonObject json, TaskMode task)
         if (value.isArray())
             fromJsonArray(value.toArray(), task);
         else {
-            throw "content <annotations> in json is not array";
+            throw JsonException("value of <annotations> is illegal");
         }
     }else{
-        qDebug()<<"no content <annotations> in json";
+//        qDebug()<<"no content <annotations> in json";
     }
 }
 
 void AnnotationContainer::fromJsonArray(QJsonArray json, TaskMode task)
 {
+    QList<AnnoItemPtr> items;
     for (int i=0;i<json.size();i++){
         QJsonValue value = json.at(i);
         if (value.isObject()){
             if (task == DETECTION){
                 shared_ptr<RectAnnotationItem> item = std::make_shared<RectAnnotationItem>();
                 item->fromJsonObject(value.toObject());
-                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+                items.push_back(std::static_pointer_cast<AnnotationItem>(item));
             }else if (task == SEGMENTATION){
                 shared_ptr<SegAnnotationItem> item = std::make_shared<SegAnnotationItem>();
                 item->fromJsonObject(value.toObject());
-                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+                items.push_back(std::static_pointer_cast<AnnotationItem>(item));
             }else if (task == DETECTION3D){
                 shared_ptr<CubeAnnotationItem> item = std::make_shared<CubeAnnotationItem>();
                 item->fromJsonObject(value.toObject());
-                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+                items.push_back(std::static_pointer_cast<AnnotationItem>(item));
             }else if (task == SEGMENTATION3D){
                 shared_ptr<Seg3DAnnotationItem> item = std::make_shared<Seg3DAnnotationItem>();
                 item->fromJsonObject(value.toObject());
-                this->push_back(std::static_pointer_cast<AnnotationItem>(item));
+                items.push_back(std::static_pointer_cast<AnnotationItem>(item));
             }
         }
+    }
+    for (auto item: items){
+        this->push_back(item);
     }
 }
 
@@ -199,7 +202,7 @@ void AnnotationContainer::allClear(){
 
 void AnnotationContainer::checkIdx(int idx) const{
     if (!(idx>=0 && idx<items.length()))
-        throw "idx out of range";
+        throw "idx "+QString::number(idx)+" out of range for anno container";
 }
 
 void AnnotationContainer::pushBackOp(AnnotationOp op){

@@ -5,6 +5,14 @@
 #include <QString>
 #include <QJsonObject>
 
+class JsonException: public std::exception{
+public:
+    JsonException(std::string message);
+    const char * what() const noexcept;
+private:
+    std::string message;
+};
+
 class AnnotationItem
 {
 public:

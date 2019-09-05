@@ -4,9 +4,19 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <exception>
+#include <string>
 
 enum FileMode{
     Close, SingleImage, MultiImage, ThirdDImage
+};
+
+class FileException: public std::exception{
+public:
+    FileException(std::string message);
+    const char * what() const noexcept;
+private:
+    std::string message;
 };
 
 class FileManager : public QObject
@@ -14,7 +24,6 @@ class FileManager : public QObject
     Q_OBJECT
 public:
     static QString changeExtensionName(QString fileName, QString newExtension);
-//    static QString changeFileSuffix(QString fileName, QString oldSuffix, QString newSuffix);
 
     static QString getDir(QString fileName);
     static QString getName(QString fileName);
@@ -23,8 +32,6 @@ public:
     static QJsonObject readJson(QString fileName);
 
     explicit FileManager(QObject *parent = nullptr);
-    explicit FileManager(QString fileName, QString outputExtension = "json", QObject *parent = nullptr);
-    explicit FileManager(QStringList fileNames, QString outputExtension = "json", QObject *parent = nullptr);
 
     QString imageFileNameAt(int idx) const { return imageFiles[idx]; }
     bool hasChangeNotSaved() const;
@@ -37,9 +44,9 @@ public:
     void close();
 
     int count();
-    void setAll(QString fileName, QString outputExtension);
-    void setAll(QStringList fileNames, QString outputExtension);
-    void setAllDetection3D(QStringList fileNames, QString outputExtension);
+    void setSingleImage(QString fileName, QString outputSuffix);
+    void setMultiImage(QStringList fileNames, QString outputSuffix);
+    void set3DImage(QStringList fileNames, QString outputSuffix);
 
 signals:
     void prevEnableChanged(bool);

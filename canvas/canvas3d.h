@@ -71,7 +71,7 @@ public slots:
     void mouseMovedWhenSelected(Point3D cursorPos);
     void mouseReleasedWhenSelected();
 
-    void close();
+    void close() override;
 
     void setPenWidth(int width) override {
         curPenWidth = width;

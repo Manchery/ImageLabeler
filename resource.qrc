@@ -1,17 +1,4 @@
 <RCC>
-    <qresource prefix="/pictures">
-        <file>img/class_01.jpg</file>
-        <file>img/class_02.jpg</file>
-        <file>img/seg_01.jpg</file>
-        <file>img/seg_02.jpg</file>
-        <file>img/seg_03.jpg</file>
-        <file>img/vid_01.jpg</file>
-        <file>img/vid_02.jpg</file>
-        <file>img/vid_03.jpg</file>
-        <file>img/vid_04.jpg</file>
-        <file>img/vid_05.jpg</file>
-        <file>img/seg_04.png</file>
-    </qresource>
     <qresource prefix="/icons">
         <file>icons/icon.icns</file>
         <file>icons/cancel.png</file>
