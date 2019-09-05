@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QString>
 #include <QtDebug>
+#include <QFontDatabase>
 
 int main(int argc, char *argv[])
 {

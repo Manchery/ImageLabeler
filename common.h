@@ -17,7 +17,8 @@ extern QList<QColor> randomColors(int count);
 extern QColor randomColor();
 
 
-static const int pixEps=5;
+const int pixEps=5;
+const int LABEL_PIXEL_SIZE = 15;
 
 enum EditingRectEdge{
     TOP, BOTTOM, LEFT, RIGHT

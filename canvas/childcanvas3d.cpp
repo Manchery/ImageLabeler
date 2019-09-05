@@ -75,8 +75,9 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
                     p.drawRect(rect);
                 }
 
-                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
-                p.drawText(rect.topLeft()-QPoint(0,10), label);
+                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(LABEL_PIXEL_SIZE);
+                p.setFont(font);
+                p.drawText(rect.topLeft()-QPoint(0,LABEL_PIXEL_SIZE/2), label);
             }
 
             if (curPoints.length()>0){ // drawing
@@ -116,8 +117,9 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
                 p.drawRect(drawedRect);
                 p.restore();
 
-                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
-                p.drawText(drawedRect.topLeft()-QPoint(0,10), selectedLabel);
+                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(LABEL_PIXEL_SIZE);
+                p.setFont(font);
+                p.drawText(drawedRect.topLeft()-QPoint(0,LABEL_PIXEL_SIZE/2), selectedLabel);
             }
         }
     } else if (parentCanvas->task == SEGMENTATION3D){

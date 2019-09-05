@@ -6,6 +6,7 @@
 #include <QList>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <memory>
 
 struct SegStroke{
     QString type;

@@ -31,6 +31,8 @@ void Canvas2D::paintEvent(QPaintEvent *event)
     p.translate(offsetToCenter());
     p.drawPixmap(0, 0, pixmap);
 
+    p.setPen(QPen(Qt::white));
+
     if (task == DETECTION){
         if (mode == DRAW){
             for (int i=0;i<pAnnoContainer->length();i++){
@@ -47,9 +49,9 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                 }else{
                     p.drawRect(rect);
                 }
-
-                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
-                p.drawText(rect.topLeft()-QPoint(0,10), label);
+                QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(LABEL_PIXEL_SIZE);
+                p.setFont(font);
+                p.drawText(rect.topLeft()-QPoint(0,LABEL_PIXEL_SIZE/2), label);
             }
             if (curPoints.length()>0){ // drawing
                 p.drawRect(QRect(curPoints[0], curPoints[1]).normalized());
@@ -83,8 +85,9 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             p.drawRect(drawedRect);
             p.restore();
 
-            QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(10);
-            p.drawText(drawedRect.topLeft()-QPoint(0,10), selectedLabel);
+            QFont font("Helvetica"); font.setFamily("Times"); font.setPixelSize(LABEL_PIXEL_SIZE);
+            p.setFont(font);
+            p.drawText(drawedRect.topLeft()-QPoint(0,LABEL_PIXEL_SIZE/2), selectedLabel);
         }
     }else if (task == SEGMENTATION){
         if (mode == DRAW){

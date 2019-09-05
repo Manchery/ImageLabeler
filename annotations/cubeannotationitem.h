@@ -4,6 +4,7 @@
 #include "annotationitem.h"
 #include <QRect>
 #include <QJsonArray>
+#include <memory>
 
 struct Point3D {
     int x,y,z;

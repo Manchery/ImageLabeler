@@ -577,6 +577,8 @@ void MainWindow::on_actionOpen_File_triggered()
     QString fileName = QFileDialog::getOpenFileName(this, "open a file", "/",
                                                     "Image Files (*.jpg *.png);;JPEG Files (*.jpg);;PNG Files (*.png)");
     if (!fileName.isNull() && !fileName.isEmpty()){
+        enableFileActions();
+
         canvas2d->loadPixmap(fileName);
         adjustFitWindow();
 
@@ -591,8 +593,6 @@ void MainWindow::on_actionOpen_File_triggered()
 
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
-
-        enableFileActions();
     }
 }
 
@@ -603,6 +603,8 @@ void MainWindow::on_actionOpen_Dir_triggered()
 
     QString dirName = QFileDialog::getExistingDirectory(this, "open a dir", "/");
     if (!dirName.isNull() && !dirName.isEmpty()){
+        enableFileActions();
+
         QDir dir(dirName);
         QStringList images = dir.entryList(QStringList() << "*.jpg" << "*.png", QDir::Files);
         images.sort();
@@ -639,8 +641,6 @@ void MainWindow::on_actionOpen_Dir_triggered()
         _loadJsonFile(fileManager.getLabelFile());
         _loadJsonFile(fileManager.getCurrentOutputFile());
         fileManager.resetChangeNotSaved();
-
-        enableFileActions();
     }
 }
 
