@@ -16,6 +16,9 @@
 extern QList<QColor> randomColors(int count);
 extern QColor randomColor();
 
+
+static const int pixEps=5;
+
 enum EditingRectEdge{
     TOP, BOTTOM, LEFT, RIGHT
 };
@@ -44,7 +47,7 @@ const int DEFAULT_PEN_WIDTH=15;
 const std::map<TaskMode,QString> taskText ={{DETECTION, "Detection "},
                                             {SEGMENTATION, "Segmentation "},
                                             {DETECTION3D, "3D Detection "},
-                                            {SEGMENTATION3D, "3d Segmentation "}};
+                                            {SEGMENTATION3D, "3D Segmentation "}};
 const std::map<DrawMode,QString> drawModeText={{RECTANGLE, "Rectangle "},
                                                {CIRCLEPEN, "Circle Pen "},
                                                {SQUAREPEN, "Square Pen "},

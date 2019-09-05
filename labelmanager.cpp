@@ -17,7 +17,7 @@ bool LabelManager::hasLabel(QString label) const {
 
 void LabelManager::checkLabel(QString label) const {
     if (labels.find(label)==labels.end())
-        throw "can not find label "+ label +"in label manager";
+        throw "can not find label "+ label +" in label manager";
 }
 
 QList<LabelProperty> LabelManager::getLabels() const {

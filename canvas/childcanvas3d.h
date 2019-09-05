@@ -73,7 +73,11 @@ private:
     qreal scale;
     QImage image;
 
-    bool mousePressingWhenMove;
+    //! for focus moving
+    bool focusMoving;
+    Axis movingFocusAxis; // Z means moving both the x,y
+    QPoint editingFocus;
+
     bool mousePressingWhenSelected;
 
     QPoint pixelPos(QPoint pos);
@@ -88,6 +92,8 @@ private:
     bool strokeDrawable;
     bool strokeDrawing;
     SegStroke3D curStroke;
+
+    QPoint _getFocus2dFromParent() const;
 };
 
 #endif // CHILDCANVAS3D_H

@@ -22,64 +22,62 @@ QColor randomColor(){
     return QColor::fromHslF(currentHue, 1.0, 0.5);
 }
 
-static const int eps=5;
-
 bool onRectTop(QPoint pos, QRect rect){
-    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.top())<=eps;
+    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.top())<=pixEps;
 }
 
 bool onRectBottom(QPoint pos, QRect rect){
-    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.bottom())<=eps;
+    return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.bottom())<=pixEps;
 }
 
 bool onRectLeft(QPoint pos, QRect rect){
-    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.left())<=eps;
+    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.left())<=pixEps;
 }
 
 bool onRectRight(QPoint pos, QRect rect){
-    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=eps;
+    return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=pixEps;
 }
 
 bool onCubeTop(Point3D pos, Cuboid cube)
 {
     return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
-            abs(pos.z - cube.minZ())<eps;
+            abs(pos.z - cube.minZ())<pixEps;
 }
 
 bool onCubeBottom(Point3D pos, Cuboid cube)
 {
     return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
-            abs(pos.z - cube.maxZ())<eps;
+            abs(pos.z - cube.maxZ())<pixEps;
 }
 
 bool onCubeLeft(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
-            abs(pos.x - cube.minX())<eps;
+            abs(pos.x - cube.minX())<pixEps;
 }
 
 bool onCubeRight(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
-            abs(pos.x - cube.maxX())<eps;
+            abs(pos.x - cube.maxX())<pixEps;
 }
 
 bool onCubeFront(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minX()<=pos.x && pos.x<=cube.maxX() &&
-            abs(pos.y - cube.maxY())<eps;
+            abs(pos.y - cube.maxY())<pixEps;
 }
 
 bool onCubeBack(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minX()<=pos.x && pos.x<=cube.maxX() &&
-            abs(pos.y - cube.minY())<eps;
+            abs(pos.y - cube.minY())<pixEps;
 }
 
 DrawMode getDrawModeFromText(const QString &text){

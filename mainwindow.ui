@@ -91,8 +91,10 @@
    </attribute>
    <addaction name="actionOpen_File"/>
    <addaction name="actionOpen_Dir"/>
+   <addaction name="actionLoad"/>
    <addaction name="actionSave"/>
    <addaction name="actionSave_As"/>
+   <addaction name="actionAuto_Save"/>
    <addaction name="actionClose"/>
    <addaction name="actionExit"/>
    <addaction name="separator"/>
@@ -344,6 +346,9 @@
    </property>
    <property name="text">
     <string>Load Labels and Annotations</string>
+   </property>
+   <property name="iconText">
+    <string>Load</string>
    </property>
    <property name="toolTip">
     <string>Load</string>

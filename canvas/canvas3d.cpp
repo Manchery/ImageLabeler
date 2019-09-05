@@ -253,7 +253,7 @@ void Canvas3D::loadImagesZ(QStringList imagesFile)
 
 void Canvas3D::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Control){
+    if (event->key() == Qt::Key_Alt){
         lastMode = mode;
         //!!! TODO: need some if to avoid breaking current operation
         changeCanvasMode(MOVE);
@@ -279,7 +279,7 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
 
 void Canvas3D::keyReleaseEvent(QKeyEvent *event)
 {
-    if (event->key()==Qt::Key_Control){
+    if (event->key()==Qt::Key_Alt){
         if (mode==MOVE){
             changeCanvasMode(lastMode);
         }
@@ -332,9 +332,9 @@ void Canvas3D::changeCanvasMode(CanvasMode _mode)
     if (mode == _mode) return;
     mode = _mode;
     if (mode == MOVE){
-        canvasX->mousePressingWhenMove=false;
-        canvasY->mousePressingWhenMove=false;
-        canvasZ->mousePressingWhenMove=false;
+        canvasX->focusMoving=false;
+        canvasY->focusMoving=false;
+        canvasZ->focusMoving=false;
     }
     emit modeChanged(modeString());
 }

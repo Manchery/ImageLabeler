@@ -10,6 +10,8 @@
 #include <QPen>
 #include <QtDebug>
 
+#include <cmath>
+
 ChildCanvas3D::ChildCanvas3D(Canvas3D *parentCanvas, Axis axis, QWidget *parent) :
     QWidget(parent),
     parentCanvas(parentCanvas),
@@ -18,7 +20,7 @@ ChildCanvas3D::ChildCanvas3D(Canvas3D *parentCanvas, Axis axis, QWidget *parent)
 //    mousePos = QPoint(0,0);
     scale=1.0;
     setMouseTracking(true);
-    mousePressingWhenMove=false;
+    focusMoving=false;
     mousePressingWhenSelected=false;
 
     strokeDrawing = strokeDrawable = false;
@@ -43,15 +45,9 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
 
     p.setPen(QPen(Qt::white));
 
-    int focusU, focusV;
-    switch(axis){
-    case X: focusU = parentCanvas->focusPos.z; focusV = parentCanvas->focusPos.y; break;
-    case Y: focusU = parentCanvas->focusPos.x; focusV = parentCanvas->focusPos.z; break;
-    case Z: focusU = parentCanvas->focusPos.x; focusV = parentCanvas->focusPos.y; break;
-    }
-
-    p.drawLine(focusU,0,focusU,getImageHeight()-1);
-    p.drawLine(0,focusV,getImageWidth()-1,focusV);
+    QPoint focus2d = _getFocus2dFromParent();
+    p.drawLine(focus2d.x(),0,focus2d.x(),getImageHeight()-1);
+    p.drawLine(0,focus2d.y(),getImageWidth()-1,focus2d.y());
 
     const AnnotationContainer *pAnnoContainer = parentCanvas->pAnnoContainer;
     const LabelManager *pLabelManager = parentCanvas->pLabelManager;
@@ -160,11 +156,25 @@ void ChildCanvas3D::mousePressEvent(QMouseEvent *event)
         QWidget::mousePressEvent(event);
         return;
     }
-    if (parentCanvas->mode == MOVE){
-        mousePressingWhenMove = true;
-    }
     QPoint pixPos = pixelPos(event->pos());
     if (outOfPixmap(pixPos)) return;
+    if (parentCanvas->mode == MOVE){
+        QPoint focus = _getFocus2dFromParent();
+        if (abs(pixPos.x()-focus.x())<pixEps && abs(pixPos.y()-focus.y())<pixEps){
+            focusMoving = true;
+            movingFocusAxis = Z;
+            editingFocus = focus;
+        }else if (abs(pixPos.x()-focus.x())<pixEps){
+            focusMoving = true;
+            movingFocusAxis = X;
+            editingFocus = focus;
+        }else if (abs(pixPos.y()-focus.y())<pixEps){
+            focusMoving = true;
+            movingFocusAxis = Y;
+            editingFocus = focus;
+        }
+        return;
+    }
     if (parentCanvas->task == DETECTION3D){
         if (parentCanvas->mode == DRAW){
             if (event->button()==Qt::LeftButton){
@@ -261,8 +271,14 @@ void ChildCanvas3D::mouseMoveEvent(QMouseEvent *event)
     }
 
     if (parentCanvas->mode==MOVE){
-        if (mousePressingWhenMove && !outOfPixmap(pixPos)){
-            emit focusMoved(pixPos);
+        if (focusMoving && !outOfPixmap(pixPos)){
+            if (movingFocusAxis == X)
+                editingFocus.setX(pixPos.x());
+            else if (movingFocusAxis == Y)
+                editingFocus.setY(pixPos.y());
+            else if (movingFocusAxis == Z)
+                editingFocus = pixPos;
+            emit focusMoved(editingFocus);
         }
         return;
     }
@@ -308,7 +324,7 @@ void ChildCanvas3D::mouseReleaseEvent(QMouseEvent *event)
         QWidget::mouseReleaseEvent(event);
         return;
     }
-    mousePressingWhenMove=false;
+    focusMoving=false;
     if (parentCanvas->task == TaskMode::DETECTION3D){
         if (parentCanvas->mode == CanvasMode::SELECT){
             mousePressingWhenSelected=false;
@@ -384,6 +400,16 @@ QRect ChildCanvas3D::_rectForCube(Cuboid cube) const
     case Z: rect = cube.rectZ(); break;
     }
     return rect;
+}
+
+QPoint ChildCanvas3D::_getFocus2dFromParent() const {
+    int focusU,focusV;
+    switch(axis){
+    case X: focusU = parentCanvas->focusPos.z; focusV = parentCanvas->focusPos.y; break;
+    case Y: focusU = parentCanvas->focusPos.x; focusV = parentCanvas->focusPos.z; break;
+    case Z: focusU = parentCanvas->focusPos.x; focusV = parentCanvas->focusPos.y; break;
+    }
+    return QPoint(focusU,focusV);
 }
 
 void ChildCanvas3D::loadImage(const QImage &newImage)
