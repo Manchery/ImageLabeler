@@ -26,6 +26,8 @@ int main(int argc, char *argv[])
 
     try {
         MainWindow w;
+//        w.setWindowState(Qt::WindowFullScreen);
+        w.setWindowState(Qt::WindowMaximized);
         w.show();
         return a.exec();
     } catch (const char *errorStr) {

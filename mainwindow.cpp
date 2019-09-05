@@ -86,6 +86,8 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox->setEnabled(false); // because the defalut mode is detection
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
 
+//    ui->mainToolBar->setIconSize(QSize(48,48));
+
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
     connect(penWidthBox, SIGNAL(valueChanged(int)), curCanvas, SLOT(setPenWidth(int)));
