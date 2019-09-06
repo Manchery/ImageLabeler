@@ -161,10 +161,12 @@ void Canvas3D::updateChildren()
 
 void Canvas3D::setImageForChild()
 {
-    canvasZ->loadImage(imagesZ[focusPos.z]);
-    canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
-    canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
-    updateChildren();
+    if (imagesZ.length()>0){
+        canvasZ->loadImage(imagesZ[focusPos.z]);
+        canvasX->loadImage(getXSlides(imagesZ, focusPos.x));
+        canvasY->loadImage(getYSlides(imagesZ, focusPos.y));
+        updateChildren();
+    }
 }
 
 // perhaps the bottle-neck of running efficiency
@@ -270,9 +272,11 @@ void Canvas3D::keyPressEvent(QKeyEvent *event)
     if (event->key()==Qt::Key_Return || event->key()==Qt::Key_Enter){
         if (task == SEGMENTATION3D && mode == DRAW){
             if (drawMode==POLYGEN){
-                canvasZ->strokeDrawing=false;
-                curStrokes.push_back(canvasZ->curStroke);
-                canvasZ->curStroke = SegStroke3D();
+                if (canvasZ->strokeDrawing){
+                    canvasZ->strokeDrawing=false;
+                    curStrokes.push_back(canvasZ->curStroke);
+                    canvasZ->curStroke = SegStroke3D();
+                }
             }
             if (curStrokes.length()>0){
                 emit newStrokes3DAnnotated(curStrokes);
