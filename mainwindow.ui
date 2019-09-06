@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>881</height>
+         <width>705</width>
+         <height>898</height>
         </rect>
        </property>
       </widget>
@@ -40,7 +40,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
@@ -359,6 +359,9 @@
    <property name="text">
     <string>Previous Image</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Left</string>
+   </property>
   </action>
   <action name="actionNext_Image">
    <property name="enabled">
@@ -370,6 +373,9 @@
    </property>
    <property name="text">
     <string>Next Image</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Right</string>
    </property>
   </action>
   <action name="actionLoad">
