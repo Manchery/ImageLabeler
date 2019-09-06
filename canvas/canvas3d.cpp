@@ -182,6 +182,7 @@ void Canvas3D::repaintSegAnnotation()
         QPixmap colorMap(imagesZ[i].size());
         colorMap.fill(QColor(0,0,0,0));
         QPainter p0(&colorMap);
+        bool p0Drawed = false;
         for (auto item: segItems){
             QString label = item->label;
 
@@ -193,18 +194,24 @@ void Canvas3D::repaintSegAnnotation()
                 color = item == pAnnoContainer->getSelectedItem() ? color: color.lighter();
             }
             for (auto stroke: item->strokes)
-                if (stroke.z==i)
+                if (stroke.z==i){
                     stroke.drawSelf(p0, color);
+                    p0Drawed = true;
+                }
         }
         for (auto stroke: curStrokes)
-            if (stroke.z==i)
+            if (stroke.z==i){
                 stroke.drawSelf(p0, Qt::white);
+                p0Drawed = true;
+            }
         p0.end();
 
         imagesZ[i] = initImagesZ[i];
-        QPainter p(&imagesZ[i]);
-        p.setOpacity(0.5);
-        p.drawPixmap(0,0,colorMap);
+        if (p0Drawed){
+            QPainter p(&imagesZ[i]);
+            p.setOpacity(0.5);
+            p.drawPixmap(0,0,colorMap);
+        }
     }
 
     setImageForChild();
@@ -317,13 +324,20 @@ void Canvas3D::changeTask(TaskMode _task) {
     case DETECTION3D:
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::RECTANGLE;
-        editing = false;
         break;
     case SEGMENTATION3D:
+        mode = CanvasMode::DRAW;
+        drawMode = DrawMode::CIRCLEPEN;
+        curPenWidth=lastPenWidth;
         break;
     default:
         throw "abnormal 2d task set to canvas 3d";
     }
+    editing = false;
+    curStrokes.clear();
+    canvasX->strokeDrawing=false;
+    canvasY->strokeDrawing=false;
+    canvasZ->strokeDrawing=false;
     emit modeChanged(modeString());
 }
 

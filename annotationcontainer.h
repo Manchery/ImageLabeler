@@ -45,7 +45,7 @@ public:
     void fromJsonArray(QJsonArray json, TaskMode task);
 
     int getSelectedIdx() const { return selectedIdx; }
-    AnnoItemPtr getSelectedItem() const { return items[selectedIdx]; }
+    AnnoItemPtr getSelectedItem() const { return (selectedIdx>=0 && selectedIdx<items.length())?items[selectedIdx]:nullptr; }
 
     int newInstanceIdForLabel(QString label);
 

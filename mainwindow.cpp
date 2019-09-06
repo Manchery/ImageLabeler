@@ -195,8 +195,10 @@ void MainWindow::_setupAnnotationContainer()
             }
             if (curCanvas->getTaskMode() == SEGMENTATION3D){
                 auto item = Seg3DAnnotationItem::castPointer(annoContainer.getSelectedItem());
-                int z = item->strokes[0].z;
-                switchFile(z);
+                if (item!=nullptr){
+                    int z = item->strokes[0].z;
+                    switchFile(z);
+                }
             }
         }
         // redundent
@@ -314,22 +316,22 @@ void MainWindow::_setupFileManager()
         auto items = ui->fileListWidget->selectedItems();
         if (items.length()==1){
             int idx = ui->fileListWidget->row(items[0]);
-            if (idx == fileManager.getCurIdx()) return;
-            if (fileManager.getMode()==MultiImage){
-                if (!switchFile(idx)){
-                    ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true); // redundent?
+            if (idx != fileManager.getCurIdx()){
+                if (fileManager.getMode()==MultiImage){
+                    if (!switchFile(idx)){
+                        ui->fileListWidget->item(fileManager.getCurIdx())->setSelected(true); // redundent?
+                    }
+                }else if (curCanvas==canvas3d){
+                    switchFile(idx);
                 }
-            }else if (curCanvas==canvas3d){
-                switchFile(idx);
             }
-        }
-        // ui list move responding to selected item
-        if (ui->fileListWidget->count()<=1) return;
-        if (items.length()==1){
-            int row = ui->fileListWidget->row(items[0]);
-            auto scroll = ui->fileListWidget->verticalScrollBar();
-            scroll ->setValue(scroll->minimum()+
-                              (scroll->maximum()-scroll->minimum())*row/(ui->fileListWidget->count()-1));
+            // ui list move responding to selected item
+            if (ui->fileListWidget->count()>1){
+                int row = ui->fileListWidget->row(items[0]);
+                auto scroll = ui->fileListWidget->verticalScrollBar();
+                scroll ->setValue(scroll->minimum()+
+                                  (scroll->maximum()-scroll->minimum())*row/(ui->fileListWidget->count()-1));
+            }
         }
     });
 

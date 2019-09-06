@@ -23,6 +23,7 @@ void AnnotationContainer::remove(int idx){
     checkIdx(idx);
     pushBackOp(AnnotationOp{REMOVE, idx, items[idx],nullptr});
     items.removeAt(idx);
+    if (idx == selectedIdx) selectedIdx = -1;
 
     emit AnnotationRemoved(idx);
     emit annoChanged();
@@ -181,7 +182,7 @@ int AnnotationContainer::newInstanceIdForLabel(QString label){
         if (item->label==label)
             maxId = std::max(item->id, maxId);
     for (auto op: ops){
-        if (op.item->label==label)
+        if (op.item!=nullptr && op.item->label==label)
             maxId = std::max(op.item->id, maxId);
         if (op.item2!=nullptr && op.item2->label==label)
             maxId = std::max(op.item2->id, maxId);

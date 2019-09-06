@@ -400,19 +400,18 @@ void Canvas2D::changeTask(TaskMode _task) {
     case DETECTION:
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::RECTANGLE;
-        editing=false;
-        strokeDrawing=false;
         break;
     case SEGMENTATION:
         mode = CanvasMode::DRAW;
         drawMode = DrawMode::CIRCLEPEN;
-        editing = false;
         curPenWidth=lastPenWidth;
-        strokeDrawing=false;
         break;
     default:
         throw "abnormal 3d task set to canvas 2d";
     }
+    editing = false;
+    strokeDrawing=false;
+    curStrokes.clear();
     emit modeChanged(modeString());
 }
 
