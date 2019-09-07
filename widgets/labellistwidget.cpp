@@ -1,4 +1,5 @@
 #include "labellistwidget.h"
+#include "common.h"
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <algorithm>
@@ -30,13 +31,7 @@ void LabelListWidget::keyPressEvent(QKeyEvent *event)
 }
 
 void LabelListWidget::addCustomItem(QString label, QColor color, bool visible){
-    QPixmap pixmap(16,16);
-    if (color.isValid()){
-        pixmap.fill(color);
-    }else{
-        throw "invalid color when add custom colored item.";
-    }
-    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
+    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(visible?Qt::Checked:Qt::Unchecked);
     //! use QListWidget::itemChanged() and check there if your item is checked or unchecked
@@ -45,40 +40,22 @@ void LabelListWidget::addCustomItem(QString label, QColor color, bool visible){
 
 void LabelListWidget::insertCustomItem(QString label, QColor color, bool visible, int idx)
 {
-    QPixmap pixmap(16,16);
-    if (color.isValid()){
-        pixmap.fill(color);
-    }else{
-        throw "invalid color when add custom colored item.";
-    }
-    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
+    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(visible?Qt::Checked:Qt::Unchecked);
     //! use QListWidget::itemChanged() and check there if your item is checked or unchecked
     this->insertItem(idx, item);
 }
 
-void LabelListWidget::addCustomItemUncheckable(QString label, QColor color){
-    QPixmap pixmap(16,16);
-    if (color.isValid()){
-        pixmap.fill(color);
-    }else{
-        throw "invalid color when add custom colored item.";
-    }
-    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
-
+void LabelListWidget::addCustomItemUncheckable(QString label, QColor color)
+{
+    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
     this->addItem(item);
 }
 
 void LabelListWidget::insertCustomItemUncheckable(QString label, QColor color, int idx)
 {
-    QPixmap pixmap(16,16);
-    if (color.isValid()){
-        pixmap.fill(color);
-    }else{
-        throw "invalid color when add custom colored item.";
-    }
-    QListWidgetItem *item = new QListWidgetItem(QIcon(pixmap),label);
+    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
     this->insertItem(idx, item);
 }
 
@@ -101,13 +78,13 @@ void LabelListWidget::changeCheckState(QString label, bool visible){
 
 void LabelListWidget::changeIconColor(QString label, QColor color){
     auto item = _findItemByText(label);
-    QPixmap pixmap(16,16); pixmap.fill(color); item->setIcon(pixmap);
+    item->setIcon(iconFromColor(color));
 }
 
 void LabelListWidget::changeIconColorByIdx(int idx, QColor color)
 {
     auto item = this->item(idx);
-    QPixmap pixmap(16,16); pixmap.fill(color); item->setIcon(pixmap);
+    item->setIcon(iconFromColor(color));
 }
 
 void LabelListWidget::changeTextByIdx(int idx, QString text)

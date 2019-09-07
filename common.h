@@ -16,6 +16,7 @@
 extern QList<QColor> randomColors(int count);
 extern QColor randomColor();
 
+extern QIcon iconFromColor(QColor color, QSize size = QSize(16,16));
 
 const int pixEps=5;
 const int LABEL_PIXEL_SIZE = 15;

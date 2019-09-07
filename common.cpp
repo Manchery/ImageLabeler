@@ -1,4 +1,5 @@
 #include "common.h"
+#include <QIcon>
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
@@ -92,4 +93,15 @@ TaskMode getTaskFromText(const QString &text){
         if (item.second==text)
             return item.first;
     throw "can not find text "+text+" for map taskText";
+}
+
+QIcon iconFromColor(QColor color, QSize size)
+{
+    QPixmap pixmap(size);
+    if (color.isValid()){
+        pixmap.fill(color);
+    }else{
+        pixmap.fill(Qt::white);
+    }
+    return QIcon(pixmap);
 }
