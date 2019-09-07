@@ -560,6 +560,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
             canvas3d->keyPressEvent(event);
             return;
         }
+    if (event->key()==Qt::Key_Escape){
+        ui->annoListWidget->clearSelection();
+        return;
+    }
     QMainWindow::keyPressEvent(event);
 }
 
