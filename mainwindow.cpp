@@ -112,7 +112,6 @@ void MainWindow::_setupLabelManager()
 {
     // signal-slot from-to: ui->list => label manager => canvas
     ui->labelListWidget->setSortingEnabled(true);
-    ui->labelListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     // right click menu for label: change color & delete
     ui->labelListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -133,13 +132,13 @@ void MainWindow::_setupLabelManager()
 
     // label changed -> ui list changed
     connect(&labelManager, &LabelManager::labelAdded,
-            ui->labelListWidget, &LabelListWidget::addCustomItem);
+            ui->labelListWidget, &CustomListWidget::addCustomItem);
     connect(&labelManager, &LabelManager::labelRemoved,
-            ui->labelListWidget, &LabelListWidget::removeCustomItem);
+            ui->labelListWidget, &CustomListWidget::removeCustomItem);
     connect(&labelManager, &LabelManager::colorChanged,
-            ui->labelListWidget, &LabelListWidget::changeIconColor);
+            ui->labelListWidget, &CustomListWidget::changeIconColor);
     connect(&labelManager, &LabelManager::visibelChanged,
-            ui->labelListWidget, &LabelListWidget::changeCheckState);
+            ui->labelListWidget, &CustomListWidget::changeCheckState);
     connect(&labelManager, &LabelManager::allCleared,
             ui->labelListWidget, &QListWidget::clear);
 
@@ -158,7 +157,6 @@ void MainWindow::_setupAnnotationContainer()
 {
     // signal-slot from-to: ui->action/canvas => annotations => canvas
     ui->annoListWidget->setSortingEnabled(false);
-    ui->annoListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
 
     // move button only enable when segment and selected
     ui->pushButton_moveUp->setEnabled(false);
@@ -291,8 +289,6 @@ void MainWindow::_setupAnnotationContainer()
 
 void MainWindow::_setupFileManager()
 {
-    ui->fileListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-
     // set change not saved, to warning when close
     connect(&labelManager, &LabelManager::labelChanged, &fileManager, &FileManager::setChangeNotSaved);
     connect(&annoContainer, &AnnotationContainer::annoChanged, &fileManager, &FileManager::setChangeNotSaved);

@@ -41,9 +41,9 @@ SOURCES += \
         labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
+        widgets/customlistwidget.cpp \
         widgets/labeldialog.cpp \
-        widgets/labellineedit.cpp \
-        widgets/labellistwidget.cpp
+        widgets/labellineedit.cpp
 
 HEADERS += \
         annotationcontainer.h \
@@ -59,9 +59,9 @@ HEADERS += \
         filemanager.h \
         labelmanager.h \
         mainwindow.h \
+        widgets/customlistwidget.h \
         widgets/labeldialog.h \
-        widgets/labellineedit.h \
-        widgets/labellistwidget.h
+        widgets/labellineedit.h
 
 FORMS += \
         mainwindow.ui \
