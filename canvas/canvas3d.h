@@ -100,7 +100,7 @@ private:
     //! for bbox editing
     Cuboid editingCube;
     bool editing;
-    EditingCubeFace editingCubeFace;
+    CanvasUtils::EditingCubeFace editingCubeFace;
 
     //! for segment
 //    int lastPenWidth;

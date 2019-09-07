@@ -18,33 +18,38 @@ extern QColor randomColor();
 
 extern QIcon iconFromColor(QColor color, QSize size = QSize(16,16));
 
-const int pixEps=5;
-const int LABEL_PIXEL_SIZE = 15;
 
-enum EditingRectEdge{
-    TOP, BOTTOM, LEFT, RIGHT
-};
+namespace CanvasUtils {
+    const int DEFAULT_PEN_WIDTH=15;
+    const int LABEL_PIXEL_SIZE = 15;
 
-extern bool onRectTop(QPoint pos, QRect rect);
-extern bool onRectBottom(QPoint pos, QRect rect);
-extern bool onRectLeft(QPoint pos, QRect rect);
-extern bool onRectRight(QPoint pos, QRect rect);
+    const int pixEps=5;
 
-// z: min -> max <=> top -> bottom
-// x: min -> max <=> left -> right
-// y: min -> max <=> back -> front
-enum EditingCubeFace{
-    TOPf, BOTTOMf, LEFTf, RIGHTf, FRONTf, BACKf
-};
+    enum EditingRectEdge{
+        TOP, BOTTOM, LEFT, RIGHT
+    };
 
-extern bool onCubeTop(Point3D pos, Cuboid cube);
-extern bool onCubeBottom(Point3D pos, Cuboid cube);
-extern bool onCubeLeft(Point3D pos, Cuboid cube);
-extern bool onCubeRight(Point3D pos, Cuboid cube);
-extern bool onCubeFront(Point3D pos, Cuboid cube);
-extern bool onCubeBack(Point3D pos, Cuboid cube);
+    extern bool onRectTop(QPoint pos, QRect rect);
+    extern bool onRectBottom(QPoint pos, QRect rect);
+    extern bool onRectLeft(QPoint pos, QRect rect);
+    extern bool onRectRight(QPoint pos, QRect rect);
 
-const int DEFAULT_PEN_WIDTH=15;
+    // z: min -> max <=> top -> bottom
+    // x: min -> max <=> left -> right
+    // y: min -> max <=> back -> front
+    enum EditingCubeFace{
+        TOPf, BOTTOMf, LEFTf, RIGHTf, FRONTf, BACKf
+    };
+
+    extern bool onCubeTop(Point3D pos, Cuboid cube);
+    extern bool onCubeBottom(Point3D pos, Cuboid cube);
+    extern bool onCubeLeft(Point3D pos, Cuboid cube);
+    extern bool onCubeRight(Point3D pos, Cuboid cube);
+    extern bool onCubeFront(Point3D pos, Cuboid cube);
+    extern bool onCubeBack(Point3D pos, Cuboid cube);
+}
+
+
 
 const std::map<TaskMode,QString> taskText ={{DETECTION, "Detection "},
                                             {SEGMENTATION, "Segmentation "},

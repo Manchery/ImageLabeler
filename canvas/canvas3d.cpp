@@ -7,6 +7,8 @@
 #include <cmath>
 #include <algorithm>
 
+using namespace CanvasUtils;
+
 Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent):
     CanvasBase (pLabelManager, pAnnoContainer, parent), focusPos(0,0,0), cursorPos(0,0,0)
 {
@@ -109,7 +111,7 @@ Canvas3D::Canvas3D(const LabelManager *pLabelManager, const AnnotationContainer 
 void Canvas3D::mousePressedWhenSelected(Point3D cursorPos, ChildCanvas3D *child)
 {
     auto item = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
-    Cuboid selectedCube = item->cube;
+    Cuboid selectedCube = item->getCube();
     if (onCubeFront(cursorPos, selectedCube) && (child==canvasZ || child == canvasX)){
         editing = true; editingCube = selectedCube; editingCubeFace = FRONTf;
     } else if (onCubeBack(cursorPos, selectedCube) && (child==canvasZ || child == canvasX)){
@@ -175,7 +177,7 @@ void Canvas3D::repaintSegAnnotation()
     QList<std::shared_ptr<Seg3DAnnotationItem>> segItems;
     for (int i=0;i<pAnnoContainer->length();i++){
         auto item = Seg3DAnnotationItem::castPointer(pAnnoContainer->at(i));
-        if (pLabelManager->hasLabel(item->label) && (*pLabelManager)[item->label].visible==false)
+        if (pLabelManager->hasLabel(item->getLabel()) && (*pLabelManager)[item->getLabel()].visible==false)
             continue;
         segItems.push_back(item);
     }
@@ -186,7 +188,7 @@ void Canvas3D::repaintSegAnnotation()
         QPainter p0(&colorMap);
         bool p0Drawed = false;
         for (auto item: segItems){
-            QString label = item->label;
+            QString label = item->getLabel();
 
             if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                 continue;
@@ -195,7 +197,7 @@ void Canvas3D::repaintSegAnnotation()
             if (mode == SELECT){
                 color = item == pAnnoContainer->getSelectedItem() ? color: color.lighter();
             }
-            for (auto stroke: item->strokes)
+            for (auto stroke: item->getStrokes())
                 if (stroke.z==i){
                     stroke.drawSelf(p0, color);
                     p0Drawed = true;

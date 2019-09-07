@@ -8,6 +8,8 @@
 #include <QtDebug>
 #include <algorithm>
 
+using namespace CanvasUtils;
+
 Canvas2D::Canvas2D(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
     CanvasBase (pLabelManager, pAnnoContainer, parent),
     pixmap()
@@ -37,8 +39,8 @@ void Canvas2D::paintEvent(QPaintEvent *event)
         if (mode == DRAW){
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                QRect rect=item->rect;
-                QString label=item->label;
+                QRect rect=item->getRect();
+                QString label=item->getLabel();
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
@@ -62,8 +64,8 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                 if (i==pAnnoContainer->getSelectedIdx()) continue;
 
                 auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                QRect rect=item->rect;
-                QString label=item->label;
+                QRect rect=item->getRect();
+                QString label=item->getLabel();
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
@@ -76,8 +78,8 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                 }
             }
 
-            QString selectedLabel = pAnnoContainer->getSelectedItem()->label;
-            QRect drawedRect = editing?editingRect:RectAnnotationItem::castPointer(pAnnoContainer->getSelectedItem())->rect;
+            QString selectedLabel = pAnnoContainer->getSelectedItem()->getLabel();
+            QRect drawedRect = editing?editingRect:RectAnnotationItem::castPointer(pAnnoContainer->getSelectedItem())->getRect();
             p.save();
             QColor color = (*pLabelManager)[selectedLabel].color;
             color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);
@@ -97,13 +99,13 @@ void Canvas2D::paintEvent(QPaintEvent *event)
 
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                QString label = item->label;
+                QString label = item->getLabel();
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
                 QColor color = (*pLabelManager)[label].color;
-                for (auto stroke: item->strokes)
+                for (auto stroke: item->getStrokes())
                     stroke.drawSelf(p0,color);
             }
             if (curStrokes.length()>0){
@@ -138,14 +140,14 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             QPainter p0(&colorMap);
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                QString label = item->label;
+                QString label = item->getLabel();
 
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
                 QColor color = (*pLabelManager)[label].color;
                 color = i == pAnnoContainer->getSelectedIdx() ? color: color.lighter();
-                for (auto stroke: item->strokes)
+                for (auto stroke: item->getStrokes())
                     stroke.drawSelf(p0,color);
             }
             p0.end();
@@ -210,7 +212,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
         } else if (mode == CanvasMode::SELECT){
             if (event->button() == Qt::LeftButton){
                 auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[pAnnoContainer->getSelectedIdx()]);
-                QRect selectedRect = item->rect;
+                QRect selectedRect = item->getRect();
                 if (onRectTop(pixPos, selectedRect)){
                     editing=true; editingRect = selectedRect;
                     editingRectEdge = TOP;
@@ -488,7 +490,7 @@ int Canvas2D::selectShape(QPoint pos)
     if (task==DETECTION){
         for (int i=pAnnoContainer->length()-1;i>=0;i--){
             auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
-            QRect rect=item->rect;
+            QRect rect=item->getRect();
             // consider for really small bounding box
             rect.setTopLeft(rect.topLeft()-QPoint(2,2));
             rect.setBottomRight(rect.bottomRight()+QPoint(2,2));

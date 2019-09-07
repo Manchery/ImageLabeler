@@ -124,10 +124,10 @@ QImage drawColorImage(const QSize &size, const AnnotationContainer *pAnnoContain
     QPainter p(&image);
     for (int i=0;i<pAnnoContainer->length();i++){
         auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
-        QString label = item->label;
+        QString label = item->getLabel();
         if ((*pLabelManager)[label].visible){
             QColor color = (*pLabelManager)[label].color;
-            for (auto stroke: item->strokes)
+            for (auto stroke: item->getStrokes())
                 stroke.drawSelf(p,color);
         }
     }
@@ -142,11 +142,11 @@ QImage drawLabelIdImage(const QSize &size, const AnnotationContainer *pAnnoConta
     QPainter p(&image);
     for (int i=0;i<pAnnoContainer->length();i++){
         auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
-        QString label = item->label;
+        QString label = item->getLabel();
         int labelId = (*pLabelManager)[label].id;
         if ((*pLabelManager)[label].visible){
             QColor color = QColor(labelId, labelId, labelId);
-            for (auto stroke: item->strokes)
+            for (auto stroke: item->getStrokes())
                 stroke.drawSelf(p,color);
         }
     }
@@ -163,10 +163,10 @@ QImage drawColorImage3d(int zCoordinate, bool *hasContent, const QSize &size, co
     QPainter p(&image);
     for (int i=0;i<pAnnoContainer->length();i++){
         auto item = Seg3DAnnotationItem::castPointer((*pAnnoContainer)[i]);
-        QString label = item->label;
+        QString label = item->getLabel();
         if ((*pLabelManager)[label].visible){
             QColor color = (*pLabelManager)[label].color;
-            for (auto stroke: item->strokes)
+            for (auto stroke: item->getStrokes())
                 if (stroke.z==zCoordinate){
                     stroke.drawSelf(p,color);
                     (*hasContent)=true;
@@ -185,11 +185,11 @@ QImage drawLabelIdImage3d(int zCoordinate, bool *hasContent, const QSize &size, 
     QPainter p(&image);
     for (int i=0;i<pAnnoContainer->length();i++){
         auto item = Seg3DAnnotationItem::castPointer((*pAnnoContainer)[i]);
-        QString label = item->label;
+        QString label = item->getLabel();
         int labelId = (*pLabelManager)[label].id;
         if ((*pLabelManager)[label].visible){
             QColor color = QColor(labelId, labelId, labelId);
-            for (auto stroke: item->strokes)
+            for (auto stroke: item->getStrokes())
                 if (stroke.z==zCoordinate){
                     stroke.drawSelf(p,color);
                     (*hasContent)=true;

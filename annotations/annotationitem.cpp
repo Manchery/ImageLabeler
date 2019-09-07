@@ -7,6 +7,8 @@ const char *JsonException::what() const noexcept {
     return message.c_str();
 }
 
+/*------------------------------------AnnotationItem---------------------------------------*/
+
 AnnotationItem::AnnotationItem():label(), id(-1) {}
 
 AnnotationItem::AnnotationItem(QString label, int id):label(label), id(id) {}

@@ -75,7 +75,7 @@ private:
     //! for bbox editing
     QRect editingRect;
     bool editing;
-    EditingRectEdge editingRectEdge;
+    CanvasUtils::EditingRectEdge editingRectEdge;
 
     //! for seg drawing
     bool strokeDrawing;

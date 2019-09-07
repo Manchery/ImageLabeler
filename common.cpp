@@ -23,58 +23,58 @@ QColor randomColor(){
     return QColor::fromHslF(currentHue, 1.0, 0.5);
 }
 
-bool onRectTop(QPoint pos, QRect rect){
+bool CanvasUtils::onRectTop(QPoint pos, QRect rect){
     return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.top())<=pixEps;
 }
 
-bool onRectBottom(QPoint pos, QRect rect){
+bool CanvasUtils::onRectBottom(QPoint pos, QRect rect){
     return rect.left()<=pos.x() && pos.x()<=rect.right() && abs(pos.y()-rect.bottom())<=pixEps;
 }
 
-bool onRectLeft(QPoint pos, QRect rect){
+bool CanvasUtils::onRectLeft(QPoint pos, QRect rect){
     return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.left())<=pixEps;
 }
 
-bool onRectRight(QPoint pos, QRect rect){
+bool CanvasUtils::onRectRight(QPoint pos, QRect rect){
     return rect.top()<=pos.y() && pos.y()<=rect.bottom() && abs(pos.x()-rect.right())<=pixEps;
 }
 
-bool onCubeTop(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeTop(Point3D pos, Cuboid cube)
 {
     return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.z - cube.minZ())<pixEps;
 }
 
-bool onCubeBottom(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeBottom(Point3D pos, Cuboid cube)
 {
     return cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.z - cube.maxZ())<pixEps;
 }
 
-bool onCubeLeft(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeLeft(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.x - cube.minX())<pixEps;
 }
 
-bool onCubeRight(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeRight(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minY()<=pos.y && pos.y<=cube.maxY() &&
             abs(pos.x - cube.maxX())<pixEps;
 }
 
-bool onCubeFront(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeFront(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minX()<=pos.x && pos.x<=cube.maxX() &&
             abs(pos.y - cube.maxY())<pixEps;
 }
 
-bool onCubeBack(Point3D pos, Cuboid cube)
+bool CanvasUtils::onCubeBack(Point3D pos, Cuboid cube)
 {
     return cube.minZ()<=pos.z && pos.z<=cube.maxZ() &&
             cube.minX()<=pos.x && pos.x<=cube.maxX() &&

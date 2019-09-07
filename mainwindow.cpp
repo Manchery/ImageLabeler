@@ -194,7 +194,7 @@ void MainWindow::_setupAnnotationContainer()
             if (curCanvas->getTaskMode() == SEGMENTATION3D){
                 auto item = Seg3DAnnotationItem::castPointer(annoContainer.getSelectedItem());
                 if (item!=nullptr){
-                    int z = item->strokes[0].z;
+                    int z = item->getStrokes()[0].z;
                     switchFile(z);
                 }
             }
@@ -207,8 +207,8 @@ void MainWindow::_setupAnnotationContainer()
         if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
             int row = ui->annoListWidget->row(_item);
             auto item = CubeAnnotationItem::castPointer(annoContainer.at(row));
-            canvas3d->setFocusPos(item->cube.center());
-            switchFile(item->cube.center().z);
+            canvas3d->setFocusPos(item->getCube().center());
+            switchFile(item->getCube().center().z);
         }
     });
 
@@ -236,15 +236,15 @@ void MainWindow::_setupAnnotationContainer()
     connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
-                std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->label,
-                                                     annoContainer.getSelectedItem()->id);
+                std::make_shared<RectAnnotationItem>(rect, annoContainer.getSelectedItem()->getLabel(),
+                                                     annoContainer.getSelectedItem()->getId());
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
     connect(canvas3d, &Canvas3D::removeCubeRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas3d, &Canvas3D::modifySelectedCubeRequest, [this](int idx, Cuboid cube){
         std::shared_ptr<CubeAnnotationItem> item =
-                std::make_shared<CubeAnnotationItem>(cube, annoContainer.getSelectedItem()->label,
-                                                     annoContainer.getSelectedItem()->id);
+                std::make_shared<CubeAnnotationItem>(cube, annoContainer.getSelectedItem()->getLabel(),
+                                                     annoContainer.getSelectedItem()->getId());
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
@@ -261,10 +261,10 @@ void MainWindow::_setupAnnotationContainer()
         }
     });
     connect(&annoContainer, &AnnotationContainer::AnnotationAdded,[this](const AnnoItemPtr &item){
-        ui->annoListWidget->addCustomItemUncheckable(item->toStr(), labelManager.getColor(item->label));
+        ui->annoListWidget->addCustomItemUncheckable(item->toStr(), labelManager.getColor(item->getLabel()));
     });
     connect(&annoContainer, &AnnotationContainer::AnnotationInserted,[this](const AnnoItemPtr &item, int idx){
-        ui->annoListWidget->insertCustomItemUncheckable(item->toStr(), labelManager.getColor(item->label),idx);
+        ui->annoListWidget->insertCustomItemUncheckable(item->toStr(), labelManager.getColor(item->getLabel()),idx);
     });
     connect(&annoContainer, &AnnotationContainer::AnnotationModified,[this](const AnnoItemPtr &item, int idx){
         ui->annoListWidget->changeTextByIdx(idx, item->toStr());

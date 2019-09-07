@@ -1,6 +1,8 @@
 #include "canvasbase.h"
 #include "common.h"
 
+using namespace CanvasUtils;
+
 CanvasBase::CanvasBase(const LabelManager *pLabelManager, const AnnotationContainer *pAnnoContainer, QWidget *parent) :
     QWidget(parent),
     pAnnoContainer(pAnnoContainer),

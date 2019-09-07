@@ -12,6 +12,8 @@
 
 #include <cmath>
 
+using namespace CanvasUtils;
+
 ChildCanvas3D::ChildCanvas3D(Canvas3D *parentCanvas, Axis axis, QWidget *parent) :
     QWidget(parent),
     parentCanvas(parentCanvas),
@@ -56,11 +58,11 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
         if (parentCanvas->mode == DRAW || (parentCanvas->mode == MOVE && parentCanvas->lastMode==DRAW)){
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = CubeAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                Cuboid cube = item->cube;
+                Cuboid cube = item->getCube();
                 if (!_showableForCube(cube)) continue;
 
                 QRect rect = _rectForCube(cube);
-                QString label = item->label;
+                QString label = item->getLabel();
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
@@ -89,11 +91,11 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
                 if (i==pAnnoContainer->getSelectedIdx()) continue;
 
                 auto item = CubeAnnotationItem::castPointer((*pAnnoContainer)[i]);
-                Cuboid cube = item->cube;
+                Cuboid cube = item->getCube();
                 if (!_showableForCube(cube)) continue;
 
                 QRect rect = _rectForCube(cube);
-                QString label = item->label;
+                QString label = item->getLabel();
                 if (pLabelManager->hasLabel(label) && (*pLabelManager)[label].visible==false)
                     continue;
 
@@ -106,8 +108,8 @@ void ChildCanvas3D::paintEvent(QPaintEvent *event)
             }
 
             auto selectedItem = CubeAnnotationItem::castPointer(pAnnoContainer->getSelectedItem());
-            QString selectedLabel = selectedItem->label;
-            Cuboid drawedCube = parentCanvas->editing?parentCanvas->editingCube:selectedItem->cube;
+            QString selectedLabel = selectedItem->getLabel();
+            Cuboid drawedCube = parentCanvas->editing?parentCanvas->editingCube:selectedItem->getCube();
             if (_showableForCube(drawedCube)){
                 QRect drawedRect = _rectForCube(drawedCube);
                 p.save();
@@ -444,7 +446,7 @@ int ChildCanvas3D::selectShape(Point3D pos)
         const AnnotationContainer *pAnnoContainer = parentCanvas->pAnnoContainer;
         for (int i=pAnnoContainer->length()-1;i>=0;i--){
             auto item = CubeAnnotationItem::castPointer((*pAnnoContainer)[i]);
-            Cuboid cube=item->cube;
+            Cuboid cube=item->getCube();
             // consider for really small bounding box
             if (cube.contains(pos, 2))
                 return i;
