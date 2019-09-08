@@ -7,26 +7,9 @@ LabelManager::LabelManager(QObject *parent) : QObject(parent)
     currentMaxId=0;
 }
 
-LabelProperty LabelManager::operator[](QString label) const {
-    return labels[label];
-}
-
-bool LabelManager::hasLabel(QString label) const {
-    return labels.find(label)!=labels.end();
-}
-
 void LabelManager::checkLabel(QString label) const {
     if (labels.find(label)==labels.end())
         throw "can not find label "+ label +" in label manager";
-}
-
-QList<LabelProperty> LabelManager::getLabels() const {
-    return labels.values();
-}
-
-QColor LabelManager::getColor(QString label) const {
-    checkLabel(label);
-    return labels[label].color;
 }
 
 QJsonArray LabelManager::toJsonArray(){
@@ -105,6 +88,8 @@ void LabelManager::allClear()
     emit allCleared();
 //    emit configChanged();
 }
+
+//---------------------------------LabelProperty-------------------------------------//
 
 LabelProperty::LabelProperty(QString label, QColor color, bool visible, int id) :
     label(label), color(color), visible(visible),id(id) { }
