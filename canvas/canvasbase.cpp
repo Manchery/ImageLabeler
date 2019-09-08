@@ -9,7 +9,7 @@ CanvasBase::CanvasBase(const LabelManager *pLabelManager, const AnnotationContai
     pLabelManager(pLabelManager)
 {
     scale = 1.0;
-    lastPenWidth=DEFAULT_PEN_WIDTH;
+    lastPenWidth = DEFAULT_PEN_WIDTH;
 }
 
 QString CanvasBase::modeString() const{

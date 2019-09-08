@@ -25,18 +25,22 @@ void Canvas2D::paintEvent(QPaintEvent *event)
         return;
     }
     QPainter p(this);
-//    p.setRenderHint(QPainter::Antialiasing);
-//    p.setRenderHint(QPainter::HighQualityAntialiasing);
+    // 由于分割需要进行逐像素标注，故不开启防锯齿
+    // p.setRenderHint(QPainter::Antialiasing);
+    // p.setRenderHint(QPainter::HighQualityAntialiasing);
     p.setRenderHint(QPainter::SmoothPixmapTransform);
 
     p.scale(scale, scale);
     p.translate(offsetToCenter());
+    // 之后的绘制在像素坐标系下进行
+
     p.drawPixmap(0, 0, pixmap);
 
     p.setPen(QPen(Qt::white));
 
     if (task == DETECTION){
         if (mode == DRAW){
+            // 已有的矩形标注
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
                 QRect rect=item->getRect();
@@ -55,11 +59,13 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                 p.setFont(font);
                 p.drawText(rect.topLeft()-QPoint(0,LABEL_PIXEL_SIZE/2), label);
             }
-            if (curPoints.length()>0){ // drawing
+            // 正在绘制的矩形标注
+            if (curPoints.length()>0){
                 p.drawRect(QRect(curPoints[0], curPoints[1]).normalized());
             }
             p.end();
         }else if (mode==SELECT){
+            // 已有的矩形标注，淡化显示，选中的除外
             for (int i=0;i<pAnnoContainer->length();i++){
                 if (i==pAnnoContainer->getSelectedIdx()) continue;
 
@@ -77,9 +83,9 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                     p.drawRect(rect);
                 }
             }
-
+            // 选中的矩形标注，突出显示
             QString selectedLabel = pAnnoContainer->getSelectedItem()->getLabel();
-            QRect drawedRect = editing?editingRect:RectAnnotationItem::castPointer(pAnnoContainer->getSelectedItem())->getRect();
+            QRect drawedRect = rectEditing?editedRect:RectAnnotationItem::castPointer(pAnnoContainer->getSelectedItem())->getRect();
             p.save();
             QColor color = (*pLabelManager)[selectedLabel].color;
             color.setAlphaF(0.2); QBrush brush(color); p.setBrush(brush);
@@ -96,7 +102,7 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             QPixmap colorMap(pixmap.size());
             colorMap.fill(QColor(0,0,0,0));
             QPainter p0(&colorMap);
-
+            // 已有的分割标注
             for (int i=0;i<pAnnoContainer->length();i++){
                 auto item = SegAnnotationItem::castPointer((*pAnnoContainer)[i]);
                 QString label = item->getLabel();
@@ -108,12 +114,13 @@ void Canvas2D::paintEvent(QPaintEvent *event)
                 for (auto stroke: item->getStrokes())
                     stroke.drawSelf(p0,color);
             }
+            // 正在绘制的分割标注
             if (curStrokes.length()>0){
                 QColor color = Qt::white;
                 for (int i=0;i<curStrokes.length()-1;i++)
                     curStrokes[i].drawSelf(p0,color);
                 if (strokeDrawing)
-                    curStrokes.back().drawSelf(p0, color, false);
+                    curStrokes.back().drawSelf(p0, color, false); // 正在绘制的轮廓不填充
                 else
                     curStrokes.back().drawSelf(p0, color, true);
             }
@@ -122,6 +129,7 @@ void Canvas2D::paintEvent(QPaintEvent *event)
             p.setOpacity(0.5);
             p.drawPixmap(0,0,colorMap);
 
+            // 显示当前画笔
             if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN) && !outOfPixmap(mousePos)){
                 p.save();
                 if (drawMode==SQUAREPEN){
@@ -135,6 +143,7 @@ void Canvas2D::paintEvent(QPaintEvent *event)
 
             p.end();
         }else if (mode == SELECT){
+            // 被选中的标注突出显示，其余淡化显示
             QPixmap colorMap(pixmap.size());
             colorMap.fill(QColor(0,0,0,0));
             QPainter p0(&colorMap);
@@ -159,15 +168,6 @@ void Canvas2D::paintEvent(QPaintEvent *event)
     }
 }
 
-void Canvas2D::close() {
-    pixmap = QPixmap();
-    curPoints.clear();
-    editing=false;
-    strokeDrawing=false;
-    curStrokes.clear();
-    adjustSize();
-    update();
-}
 
 void Canvas2D::mousePressEvent(QMouseEvent *event)
 {
@@ -177,12 +177,12 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
     }
     QPoint pixPos = pixelPos(event->pos());
     QPoint boundedPixPos = boundedPixelPos(event->pos());
-//    qDebug()<<"mouse press"<<pixPos.x()<<" "<<pixPos.y();
     emit mouseMoved(boundedPixPos);
+
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
             if (drawMode == DrawMode::RECTANGLE){
-                if (event->button() == Qt::LeftButton){
+                if (event->button() == Qt::LeftButton){         // 左键开始绘制矩形
                     if (curPoints.length()==0){
                         if (!outOfPixmap(pixPos)){
                             curPoints.push_back(pixPos);
@@ -196,7 +196,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                     } else {
                         throw "Anomaly length of curPoints of new rectangle";
                     }
-                }else if (event->button() == Qt::RightButton){
+                }else if (event->button() == Qt::RightButton){  // 右键删除矩形或取消当前正在绘制的矩形
                     if (curPoints.length()==0){
                         int selectedIdx = selectShape(pixPos);
                         if (selectedIdx!=-1)
@@ -210,27 +210,27 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                 }
             }
         } else if (mode == CanvasMode::SELECT){
-            if (event->button() == Qt::LeftButton){
+            if (event->button() == Qt::LeftButton){             // 左键开始拖动矩形的边
                 auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[pAnnoContainer->getSelectedIdx()]);
                 QRect selectedRect = item->getRect();
                 if (onRectTop(pixPos, selectedRect)){
-                    editing=true; editingRect = selectedRect;
-                    editingRectEdge = TOP;
+                    rectEditing=true; editedRect = selectedRect;
+                    editedRectEdge = TOP;
                 }else if (onRectBottom(pixPos, selectedRect)){
-                    editing=true; editingRect = selectedRect;
-                    editingRectEdge = BOTTOM;
+                    rectEditing=true; editedRect = selectedRect;
+                    editedRectEdge = BOTTOM;
                 }else if (onRectLeft(pixPos, selectedRect)){
-                    editing=true; editingRect = selectedRect;
-                    editingRectEdge = LEFT;
+                    rectEditing=true; editedRect = selectedRect;
+                    editedRectEdge = LEFT;
                 }else if (onRectRight(pixPos, selectedRect)){
-                    editing=true; editingRect = selectedRect;
-                    editingRectEdge = RIGHT;
+                    rectEditing=true; editedRect = selectedRect;
+                    editedRectEdge = RIGHT;
                 }
             }
         }
     }else if (task == TaskMode::SEGMENTATION){
         if (mode == DRAW){
-            if (event->button()==Qt::LeftButton){
+            if (event->button()==Qt::LeftButton){               // 左键开始绘制“笔画”
                 if (drawMode!=POLYGEN){
                     SegStroke stroke;
                     stroke.penWidth = curPenWidth;
@@ -244,7 +244,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                     curStrokes.push_back(stroke);
                     strokeDrawing=true;
                     update();
-                }else{ // drawMode == POLYGEN     
+                }else{  // drawMode == POLYGEN
                     if (!strokeDrawing){
                         SegStroke stroke;
                         stroke.penWidth = curPenWidth;
@@ -259,7 +259,7 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
                         update();
                     }
                 }
-            }else if (event->button()==Qt::RightButton){
+            }else if (event->button()==Qt::RightButton){        // 右键删除最近绘制的一个笔画或者取消正在绘制的多边形
                 if (drawMode!=POLYGEN || strokeDrawing==false){
                     if (curStrokes.length()>0){
                         curStrokes.pop_back();
@@ -273,7 +273,6 @@ void Canvas2D::mousePressEvent(QMouseEvent *event)
             }
         }
     }
-    setFocus();
 }
 
 void Canvas2D::mouseMoveEvent(QMouseEvent *event)
@@ -287,7 +286,7 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
     emit mouseMoved(pixPos);
     if (task == TaskMode::DETECTION){
         if (mode == CanvasMode::DRAW){
-            if (drawMode == DrawMode::RECTANGLE){
+            if (drawMode == DrawMode::RECTANGLE){       // 矩形绘制中，移动鼠标说明移动矩形的一个顶点
                 if (curPoints.length()==2){
                     curPoints[1] = pixPos;
                     update();
@@ -296,19 +295,19 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
                 }
             }
         }else if (mode == CanvasMode::SELECT){
-            if (editing){
-                switch (editingRectEdge) {
+            if (rectEditing){
+                switch (editedRectEdge) {               // 矩形编辑中，按下时移动鼠标是在拖动一条边
                 case TOP:
-                    editingRect.setTop(pixPos.y());
+                    editedRect.setTop(pixPos.y());
                     break;
                 case BOTTOM:
-                    editingRect.setBottom(pixPos.y());
+                    editedRect.setBottom(pixPos.y());
                     break;
                 case LEFT:
-                    editingRect.setLeft(pixPos.x());
+                    editedRect.setLeft(pixPos.x());
                     break;
                 case RIGHT:
-                    editingRect.setRight(pixPos.x());
+                    editedRect.setRight(pixPos.x());
                     break;
                 }
                 update();
@@ -316,7 +315,7 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
         }
     }else if (task == SEGMENTATION){
         if (mode == DRAW){
-            if (drawMode!=POLYGEN){
+            if (drawMode!=POLYGEN){                     // 多边形轮廓模式除外，移动鼠标是在绘制一个笔画
                 if (strokeDrawing){
                     if (curStrokes.back().points.length()==0 || curStrokes.back().points.back()!=pixPos){
                         curStrokes.back().points.push_back(pixPos);
@@ -324,9 +323,9 @@ void Canvas2D::mouseMoveEvent(QMouseEvent *event)
                     }
                 }
                 if (!strokeDrawing && (drawMode==SQUAREPEN || drawMode==CIRCLEPEN)){
-                    update(); // track pen pos;
+                    update();                           // 画笔的显示跟踪鼠标的移动
                 }
-            }else{ // drawMode == POLYGEN
+            }else{                                      // 多边形模式，移动鼠标是在移动当前多边形的最后一个点
                 if (strokeDrawing){
                     curStrokes.back().points.back()=pixPos;
                     update();
@@ -341,17 +340,16 @@ void Canvas2D::mouseReleaseEvent(QMouseEvent *event){
         QWidget::mouseReleaseEvent(event);
         return;
     }
-//    QPoint pixPos = boundedPixelPos(event->pos());
     if (task == TaskMode::DETECTION){
-        if (mode == CanvasMode::SELECT){
-            if (editing){
-                emit modifySelectedRectRequest(pAnnoContainer->getSelectedIdx(), editingRect.normalized());
-                editing = false;
+        if (mode == CanvasMode::SELECT){    // 选中编辑模式下，鼠标释放说明对矩形边的拖动完毕
+            if (rectEditing){
+                emit modifySelectedRectRequest(pAnnoContainer->getSelectedIdx(), editedRect.normalized());
+                rectEditing = false;
             }
         }
     }else if (task == TaskMode::SEGMENTATION){
         if (mode == DRAW){
-            if (drawMode!=POLYGEN){
+            if (drawMode!=POLYGEN){         // 除了多边形轮廓模式，鼠标释放说明一个笔画绘制完毕
                 strokeDrawing=false;
                 update();
             }
@@ -365,10 +363,9 @@ void Canvas2D::mouseDoubleClickEvent(QMouseEvent *event)
         QWidget::mouseDoubleClickEvent(event);
         return;
     }
-    //    QPoint pixPos = boundedPixelPos(event->pos());
     if (task==SEGMENTATION)
         if (mode == DRAW){
-            if (drawMode==POLYGEN){
+            if (drawMode==POLYGEN){         // 鼠标双击后，“多边形轮廓” 类型的一个“笔画”绘制完毕
                 strokeDrawing=false;
                 update();
             }
@@ -409,9 +406,9 @@ void Canvas2D::changeTask(TaskMode _task) {
         curPenWidth=lastPenWidth;
         break;
     default:
-        throw "abnormal 3d task set to canvas 2d";
+        throw "3d task cannot be set to canvas 2d";
     }
-    editing = false;
+    rectEditing = false;
     strokeDrawing=false;
     curStrokes.clear();
     emit modeChanged(modeString());
@@ -421,7 +418,7 @@ void Canvas2D::changeCanvasMode(CanvasMode _mode)
 {
     if (mode == _mode) return;
     if (_mode == MOVE)
-        throw "abnormal move mode set to canvas 2d";
+        throw "move mode cannot be set to canvas 2d";
     mode = _mode;
     emit modeChanged(modeString());
 }
@@ -432,7 +429,7 @@ void Canvas2D::changeDrawMode(DrawMode _draw)
     switch (drawMode) {
     case RECTANGLE:
         curPoints.clear();
-        editing=false;
+        rectEditing=false;
         break;
     case CIRCLEPEN:
     case SQUAREPEN:
@@ -454,6 +451,23 @@ void Canvas2D::changeDrawMode(DrawMode _draw)
     emit modeChanged(modeString());
 }
 
+void Canvas2D::setPenWidth(int width) {
+    curPenWidth = width;
+    if (drawMode==CIRCLEPEN || drawMode==SQUAREPEN)
+        lastPenWidth = width;
+    update();
+}
+
+void Canvas2D::close() {
+    pixmap = QPixmap();
+    curPoints.clear();
+    rectEditing=false;
+    strokeDrawing=false;
+    curStrokes.clear();
+    adjustSize();
+    update();
+}
+
 void Canvas2D::loadPixmap(QPixmap new_pixmap)
 {
     pixmap = new_pixmap;
@@ -466,6 +480,23 @@ void Canvas2D::setScale(qreal new_scale)
     scale = new_scale;
     adjustSize();
     update();
+}
+
+int Canvas2D::selectShape(QPoint pos)
+{
+    if (task==DETECTION){
+        for (int i=pAnnoContainer->length()-1;i>=0;i--){
+            auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
+            QRect rect=item->getRect();
+            // 对于一些很小的矩形，要允许一些偏差，否则将很难点中
+            rect.setTopLeft(rect.topLeft()-QPoint(2,2));
+            rect.setBottomRight(rect.bottomRight()+QPoint(2,2));
+            if (rect.contains(pos))
+                return i;
+        }
+        return -1;
+    }
+    return -1;
 }
 
 QPoint Canvas2D::offsetToCenter()
@@ -483,23 +514,6 @@ QSize Canvas2D::minimumSizeHint() const
     if (!pixmap.isNull())
         return scale * pixmap.size();
     return QWidget::minimumSizeHint();
-}
-
-int Canvas2D::selectShape(QPoint pos)
-{
-    if (task==DETECTION){
-        for (int i=pAnnoContainer->length()-1;i>=0;i--){
-            auto item = RectAnnotationItem::castPointer((*pAnnoContainer)[i]);
-            QRect rect=item->getRect();
-            // consider for really small bounding box
-            rect.setTopLeft(rect.topLeft()-QPoint(2,2));
-            rect.setBottomRight(rect.bottomRight()+QPoint(2,2));
-            if (rect.contains(pos))
-                return i;
-        }
-        return -1;
-    }
-    return -1;
 }
 
 QPoint Canvas2D::pixelPos(QPoint pos)

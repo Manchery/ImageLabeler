@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
 
+    // 使用qss美化ui界面，但是与部分部件兼容不佳
 //    QFile f(":qdarkstyle/style.qss");
 //    if (!f.exists())
 //    {

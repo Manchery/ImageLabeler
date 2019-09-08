@@ -30,6 +30,7 @@ struct SegStroke{
     SegStroke();
     void fromJsonObject(QJsonObject json);
     QJsonObject toJsonObject();
+    // 将自身（一个“笔画”）以颜色color绘制在QPainter上，当类型为轮廓时，fill表示是否填充中间区域
     void drawSelf(QPainter &p,QColor color, bool fill=true);
 };
 
