@@ -16,16 +16,7 @@ const char *FileException::what() const noexcept {
 
 /*--------------------------FileManager static member-----------------------------*/
 
-QString FileManager::changeExtensionName(QString fileName, QString newExtension){
-    QStringList list = fileName.split('.');
-    QString oldExtension = list.back();
-    QString newFileName = fileName.replace(fileName.length()-oldExtension.length(),
-                                           oldExtension.length(), newExtension);
-    qDebug()<<newFileName;
-    return newFileName;
-}
-
-//example: "../../../abc.d" => "../../../"
+// example: "../../../abc.d" => "../../../"
 QString FileManager::getDir(QString fileName)
 {
     QStringList list = fileName.split('/');
@@ -92,22 +83,6 @@ FileManager::FileManager(QObject *parent) : QObject(parent)
     mode = Close;
 }
 
-bool FileManager::hasChangeNotSaved() const { return changeNotSaved; }
-
-QString FileManager::getCurrentImageFile() const { return imageFiles[curIdx]; }
-
-QString FileManager::getCurrentOutputFile() const {
-    if (mode==ThirdDImage)
-        return outputFiles[0];
-    else {
-        return outputFiles[curIdx];
-    }
-}
-
-QString FileManager::getLabelFile() const { return labelFile; }
-
-FileMode FileManager::getMode() const { return mode; }
-
 void FileManager::close()
 {
     mode = Close;
@@ -120,8 +95,6 @@ void FileManager::close()
     emit nextEnableChanged(false);
     emit fileListSetup();
 }
-
-int FileManager::count(){ return imageFiles.length(); }
 
 void FileManager::setSingleImage(QString fileName, QString outputSuffix)
 {
@@ -166,10 +139,6 @@ void FileManager::set3DImage(QStringList fileNames, QString outputSuffix)
     emitPrevNextEnable();
     emit fileListSetup();
 }
-
-void FileManager::setChangeNotSaved() { changeNotSaved=true; }
-
-void FileManager::resetChangeNotSaved(){ changeNotSaved=false; }
 
 void FileManager::prevFile(){
     if (curIdx>0) selectFile(curIdx-1);
