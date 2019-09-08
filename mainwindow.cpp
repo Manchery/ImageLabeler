@@ -59,12 +59,13 @@ MainWindow::MainWindow(QWidget *parent) :
     _setupAnnotationContainer();
     _setupFileManager();
 
-    canvas2d->changeTask(DETECTION); // DEFAULT TASK
+    canvas2d->changeTask(DETECTION);        // DEFAULT TASK
     unableFileActions();
 }
 
 void MainWindow::_setupToolBarAndStatusBar()
 {
+    /*--------------------------------工具栏相关--------------------------------*/
     taskComboBox = new QComboBox(ui->mainToolBar);
     taskComboBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     taskComboBox->addItem(taskText.at(DETECTION));
@@ -83,43 +84,49 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox->setSingleStep(1);
     penWidthBox->setValue(1);
     penWidthBox->setWrapping(false);
-    penWidthBox->setEnabled(false); // because the defalut mode is detection
+    penWidthBox->setEnabled(false);     // 因为默认任务是2D 检测
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
 
-//    ui->mainToolBar->setIconSize(QSize(48,48));
+    ui->mainToolBar->setIconSize(QSize(48,48));
 
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);
     connect(penWidthBox, SIGNAL(valueChanged(int)), curCanvas, SLOT(setPenWidth(int)));
-
-    connect(canvas2d, &Canvas2D::modeChanged, this, &MainWindow::reportCanvasMode);
-    connect(canvas3d, &Canvas3D::modeChanged, this, &MainWindow::reportCanvasMode);
-
-    mousePosLabel = new QLabel();
-    ui->statusBar->addPermanentWidget(mousePosLabel);
-    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouse2dMoved);
-    connect(canvas3d, &Canvas3D::focus3dMoved, this, &MainWindow::reportMouse3dMoved);
-    connect(canvas3d, &Canvas3D::cursor3dMoved, this, &MainWindow::reportMouse3dMoved);
 
     connect(ui->actionFit_Window, &QAction::triggered, this, &MainWindow::adjustFitWindow);
     connect(ui->actionZoom_in, &QAction::triggered, [this](){ curCanvas->setScale(curCanvas->getScale()*1.1); });
     connect(ui->actionZoom_out, &QAction::triggered, [this](){ curCanvas->setScale(curCanvas->getScale()*0.9); });
     connect(ui->actionPrevious_Image, &QAction::triggered, [this](){ switchFile(fileManager.getCurIdx()-1); });
     connect(ui->actionNext_Image, &QAction::triggered, [this](){ switchFile(fileManager.getCurIdx()+1); });
+
+    /*--------------------------------工具栏相关 结束----------------------------*/
+
+
+    /*--------------------------------状态栏相关--------------------------------*/
+    mousePosLabel = new QLabel();
+    ui->statusBar->addPermanentWidget(mousePosLabel);
+    connect(canvas2d, &Canvas2D::mouseMoved, this, &MainWindow::reportMouse2dMoved);
+    connect(canvas3d, &Canvas3D::focus3dMoved, this, &MainWindow::reportMouse3dMoved);
+    connect(canvas3d, &Canvas3D::cursor3dMoved, this, &MainWindow::reportMouse3dMoved);
+
+    connect(canvas2d, &Canvas2D::modeChanged, this, &MainWindow::reportCanvasMode);
+    connect(canvas3d, &Canvas3D::modeChanged, this, &MainWindow::reportCanvasMode);
+
+    /*--------------------------------状态栏相关 结束----------------------------*/
 }
 
 void MainWindow::_setupLabelManager()
 {
-    // signal-slot from-to: ui->list => label manager => canvas
     ui->labelListWidget->setSortingEnabled(true);
 
-    // right click menu for label: change color & delete
+    // label的右键菜单: change color & delete
     ui->labelListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->labelListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideLabelContextMenu);
 
+    // label的visible改变
     connect(ui->labelListWidget, &QListWidget::itemChanged,
-            [this](QListWidgetItem *item){ // changeLabelVisble
+            [this](QListWidgetItem *item){
                 if (item->checkState()==Qt::Checked){
                     labelManager.setVisible(item->text(),true);
                 }else{
@@ -127,7 +134,7 @@ void MainWindow::_setupLabelManager()
                 }
             });
 
-    // label changed -> canvas repaint
+    // label changed -> canvas update
     connect(&labelManager, &LabelManager::labelChanged, this, &MainWindow::canvasUpdate);
 
     // label changed -> ui list changed
@@ -142,23 +149,37 @@ void MainWindow::_setupLabelManager()
     connect(&labelManager, &LabelManager::allCleared,
             ui->labelListWidget, &QListWidget::clear);
 
-    // maybe give back a label when undo delete a anno
+    // 执行undo的时候可能会造成已经被删除的label又重新出现的情况
     connect(&annoContainer, &AnnotationContainer::labelGiveBack, this, &MainWindow::newLabelRequest);
 
-    // widgets about add label
+    // 与新建label相关的部件
     connect(ui->pushButton_addLabel, &QPushButton::clicked, [this](){
         newLabelRequest(ui->lineEdit_addLabel->text());
         ui->lineEdit_addLabel->setText("");
     });
-    ui->lineEdit_addLabel->installEventFilter(this);
+    ui->lineEdit_addLabel->installEventFilter(this); // 详见 MainWindow::eventFilter
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == ui->lineEdit_addLabel) {
+        if (event->type() == QEvent::KeyPress) {
+            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+            if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+                newLabelRequest(ui->lineEdit_addLabel->text());
+                ui->lineEdit_addLabel->setText("");
+                return true;    // 不继续传播回车事件是因为enter也可用于表示一个分割标注已经绘制完毕
+            }
+        }
+    }
+    return false;
 }
 
 void MainWindow::_setupAnnotationContainer()
 {
-    // signal-slot from-to: ui->action/canvas => annotations => canvas
     ui->annoListWidget->setSortingEnabled(false);
 
-    // move button only enable when segment and selected
+    // move up 和 move bottom 用于改变分割标注的覆盖情况，所以只在分割且选中时是enabled
     ui->pushButton_moveUp->setEnabled(false);
     ui->pushButton_moveDown->setEnabled(false);
     connect(ui->pushButton_moveUp, &QPushButton::clicked, [this](){
@@ -174,17 +195,17 @@ void MainWindow::_setupAnnotationContainer()
         }
     });
 
-    // select a anno to edit it
+    // 选中一个anno的item来进入选择编辑模式
     connect(ui->annoListWidget, &QListWidget::itemSelectionChanged, [this](){
         auto items = ui->annoListWidget->selectedItems();
-        if (items.length()==0){
+        if (items.length()==0){ // 回到DRAW模式
             curCanvas->changeCanvasMode(DRAW);
             annoContainer.setSelected(-1);
             if (curCanvas->getTaskMode() == SEGMENTATION || curCanvas->getTaskMode() == SEGMENTATION3D){
                 ui->pushButton_moveUp->setEnabled(false);
                 ui->pushButton_moveDown->setEnabled(false);
             }
-        }else{
+        }else{                  // 进入SELECT模式，可编辑
             curCanvas->changeCanvasMode(SELECT);
             annoContainer.setSelected(ui->annoListWidget->row(items[0]));
             if (curCanvas->getTaskMode() == SEGMENTATION || curCanvas->getTaskMode() == SEGMENTATION3D){
@@ -199,10 +220,12 @@ void MainWindow::_setupAnnotationContainer()
                 }
             }
         }
-        // redundent
-//        if (curCanvas == canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D)
-//            canvas3d->repaintSegAnnotation();
+        //! 可能是多余的？
+        // if (curCanvas == canvas3d && canvas3d->getTaskMode() == SEGMENTATION3D)
+        //     canvas3d->repaintSegAnnotation();
     });
+
+    // 点击一个标注，如果是在3D检测下，则将focus设置到该标注的cube的中央
     connect(ui->annoListWidget, &QListWidget::itemClicked, [this](QListWidgetItem *_item){
         if (curCanvas == canvas3d && canvas3d->getTaskMode() == DETECTION3D){
             int row = ui->annoListWidget->row(_item);
@@ -212,7 +235,7 @@ void MainWindow::_setupAnnotationContainer()
         }
     });
 
-    // right click menu for anno : delete
+    // annotation的右键菜单: delete
     ui->annoListWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->annoListWidget, &QListWidget::customContextMenuRequested,
             this, &MainWindow::provideAnnoContextMenu);
@@ -220,19 +243,19 @@ void MainWindow::_setupAnnotationContainer()
     // undo & redo
     ui->actionUndo->setEnabled(false);
     connect(&annoContainer, &AnnotationContainer::UndoEnableChanged,
-            ui->actionUndo, &QAction::setEnabled); // sync action enable
+            ui->actionUndo, &QAction::setEnabled);
     connect(ui->actionUndo, &QAction::triggered, &annoContainer, &AnnotationContainer::undo);
     ui->actionRedo->setEnabled(false);
     connect(&annoContainer, &AnnotationContainer::RedoEnableChanged,
             ui->actionRedo, &QAction::setEnabled);
     connect(ui->actionRedo, &QAction::triggered, &annoContainer, &AnnotationContainer::redo);
 
-    // request from canvas
+    // 来自canvas的关于新标注的请求
     connect(canvas2d, &Canvas2D::newRectangleAnnotated, this, &MainWindow::getNewRect);
     connect(canvas2d, &Canvas2D::newStrokesAnnotated, this, &MainWindow::getNewStrokes);
     connect(canvas3d, &Canvas3D::newCubeAnnotated, this, &MainWindow::getNewCube);
     connect(canvas3d, &Canvas3D::newStrokes3DAnnotated, this, &MainWindow::getNewStrokes3D);
-    // request from canvas, only for bbox, not segmentation
+    // 来自canvas的关于修改或删除矩形（立方体）的标注的请求
     connect(canvas2d, &Canvas2D::removeRectRequest, &annoContainer, &AnnotationContainer::remove);
     connect(canvas2d, &Canvas2D::modifySelectedRectRequest, [this](int idx, QRect rect){
         std::shared_ptr<RectAnnotationItem> item =
@@ -248,11 +271,11 @@ void MainWindow::_setupAnnotationContainer()
         annoContainer.modify(idx, std::static_pointer_cast<AnnotationItem>(item));
     });
 
-    // anno changed: canvas repaint
+    // anno changed -> canvas update
     connect(&annoContainer, &AnnotationContainer::annoChanged, this, &MainWindow::canvasUpdate);
     connect(&annoContainer, &AnnotationContainer::selectedChanged, this, &MainWindow::canvasUpdate);
 
-    // anno changed: ui list change
+    // anno changed -> ui list change
     connect(&labelManager, &LabelManager::colorChanged, [this](QString label, QColor color){
         for (int i=0;i<ui->annoListWidget->count();i++){
             auto item = ui->annoListWidget->item(i);
@@ -289,15 +312,15 @@ void MainWindow::_setupAnnotationContainer()
 
 void MainWindow::_setupFileManager()
 {
-    // set change not saved, to warning when close
+    // labelChangede,annoChanged -> setChangeNotSaved
     connect(&labelManager, &LabelManager::labelChanged, &fileManager, &FileManager::setChangeNotSaved);
     connect(&annoContainer, &AnnotationContainer::annoChanged, &fileManager, &FileManager::setChangeNotSaved);
 
-    // sync prev/next action enable
+    // prev/next action enable
     connect(&fileManager, &FileManager::prevEnableChanged, ui->actionPrevious_Image, &QAction::setEnabled);
     connect(&fileManager, &FileManager::nextEnableChanged, ui->actionNext_Image, &QAction::setEnabled);
 
-    // to update ui list
+    // fileListSetup -> update ui list
     connect(&fileManager, &FileManager::fileListSetup, [this](){
         ui->fileListWidget->clear();
         if (fileManager.getMode() == Close) return;
@@ -321,17 +344,17 @@ void MainWindow::_setupFileManager()
                     switchFile(idx);
                 }
             }
-            // ui list move responding to selected item
+            // listwidget的滚轮跟随移动
             if (ui->fileListWidget->count()>1){
                 int row = ui->fileListWidget->row(items[0]);
                 auto scroll = ui->fileListWidget->verticalScrollBar();
-                scroll ->setValue(scroll->minimum()+
+                scroll->setValue(scroll->minimum()+
                                   (scroll->maximum()-scroll->minimum())*row/(ui->fileListWidget->count()-1));
             }
         }
     });
 
-    // ui list responding to focus move
+    // 3D情况下，focus的移动影响到图像的切换
     connect(canvas3d, &Canvas3D::focus3dMoved, [this](Point3D focus){
         fileManager.selectFile(focus.z);
         ui->fileListWidget->item(focus.z)->setSelected(true);
@@ -342,12 +365,12 @@ void MainWindow::taskModeChanged()
 {
     QString text = taskComboBox->currentText();
 
-    if (is3dTask(text)){ // 3D
+    if (is3dTask(text)){    // 3D
         ui->actionOpen_File->setEnabled(false);
         curCanvas = canvas3d;
         canvas2d->setVisible(false); canvas2d->setEnabled(false);
         canvas3d->setVisible(true); canvas3d->setEnabled(true);
-    }else{ // 2D
+    }else{                  // 2D
         ui->actionOpen_File->setEnabled(true);
         curCanvas = canvas2d;
         canvas2d->setVisible(true); canvas2d->setEnabled(true);
@@ -385,7 +408,7 @@ void MainWindow::drawModeChanged()
     if (text==drawModeText.at(RECTANGLE) || text==drawModeText.at(CONTOUR) ||text==drawModeText.at(POLYGEN)){
         penWidthBox->setEnabled(false);
         penWidthBox->setValue(1);
-    }else { // CIRCLE PEN & SQUARE PEN
+    }else {     // CIRCLE PEN & SQUARE PEN
         penWidthBox->setEnabled(true);
         penWidthBox->setValue(curCanvas->getLastPenWidth());
     }
@@ -396,21 +419,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::eventFilter(QObject *watched, QEvent *event)
-{
-    if (watched == ui->lineEdit_addLabel) {
-        if (event->type() == QEvent::KeyPress) {
-            QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
-            if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
-                newLabelRequest(ui->lineEdit_addLabel->text());
-                ui->lineEdit_addLabel->setText("");
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 QString MainWindow::_labelRequest()
 {
     QString curLabel = getCurrentLabel();
@@ -418,9 +426,9 @@ QString MainWindow::_labelRequest()
         LabelDialog dialog(labelManager, this);
         if (dialog.exec() == QDialog::Accepted) {
             QString newLabel = dialog.getLabel();
+            // newLabel 也有可能是 "" ，说明dialog被点击了取消
             newLabelRequest(newLabel);
             return newLabel;
-            // maybe empty(newLabel==""), that also result in no anno added
         }else {
             return "";
         }
@@ -534,7 +542,7 @@ QString MainWindow::getCurrentLabel() const
     if (selectedLabels.length()==1){
         return selectedLabels[0]->text();
     }else if (selectedLabels.length()==0){
-        return QString();
+        return "";
     }else {
         throw "selected mutiple label in the list";
     }
@@ -664,12 +672,15 @@ void MainWindow::on_actionExit_triggered()
     QApplication::quit();
 }
 
+void MainWindow::on_actionAbout_triggered()
+{
+}
+
 bool MainWindow::switchFile(int idx)
 {
     if (curCanvas == canvas2d){
         if (!_checkUnsaved()) return false;
 
-        //! ? : whether clear
         labelManager.allClear();
         annoContainer.allClear();
 

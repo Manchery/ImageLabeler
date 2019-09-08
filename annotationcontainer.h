@@ -51,7 +51,7 @@ public:
     explicit AnnotationContainer(QObject *parent = nullptr);
 
     int length() const{ return items.length(); }
-    AnnoItemPtr operator [](int idx) const;
+    AnnoItemPtr operator [](int idx) const { checkIdx(idx); return items[idx]; }
     AnnoItemPtr at(int idx) const { checkIdx(idx); return items[idx]; }
 
     int getSelectedIdx() const { return selectedIdx; }
