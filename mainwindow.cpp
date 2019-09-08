@@ -89,7 +89,7 @@ void MainWindow::_setupToolBarAndStatusBar()
     penWidthBox->setEnabled(false);     // 因为默认任务是2D 检测
     ui->mainToolBar->insertWidget(ui->actionOpen_File, penWidthBox);
 
-    ui->mainToolBar->setIconSize(QSize(48,48));
+    ui->mainToolBar->setIconSize(QSize(32,32));
 
     connect(taskComboBox, &QComboBox::currentTextChanged, this, &MainWindow::taskModeChanged);
     connect(drawComboBox, &QComboBox::currentTextChanged, this, &MainWindow::drawModeChanged);

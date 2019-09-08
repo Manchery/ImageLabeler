@@ -24,10 +24,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 CONFIG += c++14
 
-INCLUDEPATH = widgets canvas annotations
+INCLUDEPATH = widgets canvas annotations controllers
 
 SOURCES += \
-        annotationcontainer.cpp \
         annotations/annotationitem.cpp \
         annotations/cubeannotationitem.cpp \
         annotations/rectannotationitem.cpp \
@@ -37,8 +36,9 @@ SOURCES += \
         canvas/canvasbase.cpp \
         canvas/childcanvas3d.cpp \
         common.cpp \
-        filemanager.cpp \
-        labelmanager.cpp \
+        controllers/annotationcontainer.cpp \
+        controllers/filemanager.cpp \
+        controllers/labelmanager.cpp \
         main.cpp \
         mainwindow.cpp \
         widgets/customlistwidget.cpp \
@@ -46,7 +46,6 @@ SOURCES += \
         widgets/labellineedit.cpp
 
 HEADERS += \
-        annotationcontainer.h \
         annotations/annotationitem.h \
         annotations/cubeannotationitem.h \
         annotations/rectannotationitem.h \
@@ -56,8 +55,9 @@ HEADERS += \
         canvas/canvasbase.h \
         canvas/childcanvas3d.h \
         common.h \
-        filemanager.h \
-        labelmanager.h \
+        controllers/annotationcontainer.h \
+        controllers/filemanager.h \
+        controllers/labelmanager.h \
         mainwindow.h \
         widgets/customlistwidget.h \
         widgets/labeldialog.h \
