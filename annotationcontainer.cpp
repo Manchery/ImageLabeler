@@ -112,12 +112,7 @@ void AnnotationContainer::setSelected(int idx)
     emit selectedChanged();
 }
 
-AnnoItemPtr AnnotationContainer::operator [](int idx) const{
-    checkIdx(idx);
-    return items[idx];
-}
-
-bool AnnotationContainer::hasData(QString label){
+bool AnnotationContainer::hasData(QString label) const{
     for (auto item: items)
         if (item->label==label)
             return true;
