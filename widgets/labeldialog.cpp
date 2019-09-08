@@ -16,7 +16,7 @@ LabelDialog::LabelDialog(const LabelManager &labelManager, QWidget *parent) :
     ui->setupUi(this);
 
     for (auto label:labelManager.getLabels()){
-        QListWidgetItem *item = new QListWidgetItem(iconFromColor(label.color),label.label, ui->listWidget);
+        QListWidgetItem *item = new QListWidgetItem(ColorUtils::iconFromColor(label.color),label.label, ui->listWidget);
         ui->listWidget->addItem(item);
     }
 

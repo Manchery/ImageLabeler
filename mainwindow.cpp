@@ -25,6 +25,8 @@
 
 #include <cmath>
 
+using namespace StringConstants;
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -481,7 +483,7 @@ void MainWindow::newLabelRequest(QString newLabel)
 {
     if (newLabel.isNull() || newLabel.isEmpty()) return;
     if (!labelManager.hasLabel(newLabel)){
-        QColor newColor = randomColor();
+        QColor newColor = ColorUtils::randomColor();
         labelManager.addLabel(newLabel, newColor, true);
     }
 }

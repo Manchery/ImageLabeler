@@ -121,7 +121,7 @@ void FileManager::setMultiImage(QStringList fileNames, QString outputSuffix)
         imageFiles<<fileName;
         outputFiles<<getDir(fileName) + getName(fileName) + outputSuffix;
     }
-    labelFile = getDir(fileNames[0]) + FILENAME_DIR_LABEL;
+    labelFile = getDir(fileNames[0]) + StringConstants::FILENAME_DIR_LABEL;
     emitPrevNextEnable();
     emit fileListSetup();
 }

@@ -32,7 +32,7 @@ void CustomListWidget::keyPressEvent(QKeyEvent *event)
 }
 
 void CustomListWidget::addCustomItem(QString label, QColor color, bool checked){
-    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
+    QListWidgetItem *item = new QListWidgetItem(ColorUtils::iconFromColor(color), label);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(checked?Qt::Checked:Qt::Unchecked);
     //! note: use QListWidget::itemChanged() and check there if your item is checked or unchecked
@@ -41,7 +41,7 @@ void CustomListWidget::addCustomItem(QString label, QColor color, bool checked){
 
 void CustomListWidget::insertCustomItem(QString label, QColor color, bool checked, int idx)
 {
-    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
+    QListWidgetItem *item = new QListWidgetItem(ColorUtils::iconFromColor(color), label);
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
     item->setCheckState(checked?Qt::Checked:Qt::Unchecked);
     //! note: use QListWidget::itemChanged() and check there if your item is checked or unchecked
@@ -50,13 +50,13 @@ void CustomListWidget::insertCustomItem(QString label, QColor color, bool checke
 
 void CustomListWidget::addCustomItemUncheckable(QString label, QColor color)
 {
-    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
+    QListWidgetItem *item = new QListWidgetItem(ColorUtils::iconFromColor(color), label);
     this->addItem(item);
 }
 
 void CustomListWidget::insertCustomItemUncheckable(QString label, QColor color, int idx)
 {
-    QListWidgetItem *item = new QListWidgetItem(iconFromColor(color), label);
+    QListWidgetItem *item = new QListWidgetItem(ColorUtils::iconFromColor(color), label);
     this->insertItem(idx, item);
 }
 
@@ -79,13 +79,13 @@ void CustomListWidget::changeCheckState(QString label, bool checked){
 
 void CustomListWidget::changeIconColor(QString label, QColor color){
     auto item = _findItemByText(label);
-    item->setIcon(iconFromColor(color));
+    item->setIcon(ColorUtils::iconFromColor(color));
 }
 
 void CustomListWidget::changeIconColorByIdx(int idx, QColor color)
 {
     auto item = this->item(idx);
-    item->setIcon(iconFromColor(color));
+    item->setIcon(ColorUtils::iconFromColor(color));
 }
 
 void CustomListWidget::changeTextByIdx(int idx, QString text)

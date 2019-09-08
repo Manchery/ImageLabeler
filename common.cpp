@@ -5,7 +5,7 @@
 #include <cstdlib>
 
 //! Reference: https://gist.github.com/ialhashim/b39a68cf48a0d2e66621
-QList<QColor> randomColors(int count){
+QList<QColor> ColorUtils::randomColors(int count){
     static qreal currentHue = static_cast<qreal>(qrand())/RAND_MAX;
     QList<QColor> colors;
     for (int i = 0; i < count; i++){
@@ -16,11 +16,22 @@ QList<QColor> randomColors(int count){
     return colors;
 }
 
-QColor randomColor(){
+QColor ColorUtils::randomColor(){
     static qreal currentHue = static_cast<qreal>(qrand())/RAND_MAX;
     currentHue += 0.618033988749895;
     currentHue = std::fmod(currentHue, 1.0);
     return QColor::fromHslF(currentHue, 1.0, 0.5);
+}
+
+QIcon ColorUtils::iconFromColor(QColor color, QSize size)
+{
+    QPixmap pixmap(size);
+    if (color.isValid()){
+        pixmap.fill(color);
+    }else{
+        pixmap.fill(Qt::white);
+    }
+    return QIcon(pixmap);
 }
 
 bool CanvasUtils::onRectTop(QPoint pos, QRect rect){
@@ -81,27 +92,17 @@ bool CanvasUtils::onCubeBack(Point3D pos, Cuboid cube)
             abs(pos.y - cube.minY())<pixEps;
 }
 
-DrawMode getDrawModeFromText(const QString &text){
+DrawMode StringConstants::getDrawModeFromText(const QString &text){
     for (auto item: drawModeText)
         if (item.second==text)
             return item.first;
     throw "can not find text "+text+" for map drawModeText";
 }
 
-TaskMode getTaskFromText(const QString &text){
+TaskMode StringConstants::getTaskFromText(const QString &text){
     for (auto item: taskText)
         if (item.second==text)
             return item.first;
     throw "can not find text "+text+" for map taskText";
 }
 
-QIcon iconFromColor(QColor color, QSize size)
-{
-    QPixmap pixmap(size);
-    if (color.isValid()){
-        pixmap.fill(color);
-    }else{
-        pixmap.fill(Qt::white);
-    }
-    return QIcon(pixmap);
-}
