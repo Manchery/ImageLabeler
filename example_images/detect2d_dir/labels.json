@@ -1,0 +1,24 @@
+{
+    "labels": [
+        {
+            "color": [
+                0,
+                255,
+                48
+            ],
+            "id": 0,
+            "label": "passby",
+            "visible": true
+        },
+        {
+            "color": [
+                252,
+                0,
+                29
+            ],
+            "id": 1,
+            "label": "track",
+            "visible": true
+        }
+    ]
+}

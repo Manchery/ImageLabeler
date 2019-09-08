@@ -1,0 +1,110 @@
+{
+    "annotations": [
+        {
+            "id": 0,
+            "label": "people",
+            "points": [
+                [
+                    93,
+                    93
+                ],
+                [
+                    239,
+                    341
+                ]
+            ]
+        },
+        {
+            "id": 1,
+            "label": "people",
+            "points": [
+                [
+                    207,
+                    108
+                ],
+                [
+                    306,
+                    298
+                ]
+            ]
+        },
+        {
+            "id": 2,
+            "label": "people",
+            "points": [
+                [
+                    280,
+                    114
+                ],
+                [
+                    372,
+                    298
+                ]
+            ]
+        },
+        {
+            "id": 0,
+            "label": "sofa",
+            "points": [
+                [
+                    151,
+                    203
+                ],
+                [
+                    499,
+                    374
+                ]
+            ]
+        },
+        {
+            "id": 3,
+            "label": "people",
+            "points": [
+                [
+                    400,
+                    83
+                ],
+                [
+                    446,
+                    117
+                ]
+            ]
+        },
+        {
+            "id": 4,
+            "label": "people",
+            "points": [
+                [
+                    441,
+                    88
+                ],
+                [
+                    477,
+                    116
+                ]
+            ]
+        }
+    ],
+    "labels": [
+        {
+            "color": [
+                255,
+                121,
+                0
+            ],
+            "id": 1,
+            "label": "people",
+            "visible": true
+        },
+        {
+            "color": [
+                47,
+                0,
+                255
+            ],
+            "id": 2,
+            "label": "sofa",
+            "visible": true
+        }
+    ]
+}
