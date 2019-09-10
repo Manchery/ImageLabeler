@@ -67,6 +67,8 @@ FORMS += \
         mainwindow.ui \
         widgets/labeldialog.ui
 
+RC_ICONS = "icons/icon.ico"
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin

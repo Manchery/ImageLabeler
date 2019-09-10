@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>Image Labeler</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="resource.qrc">
+    <normaloff>:/icons/icons/icon.png</normaloff>:/icons/icons/icon.png</iconset>
+  </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
@@ -25,8 +29,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>693</width>
-         <height>881</height>
+         <width>705</width>
+         <height>898</height>
         </rect>
        </property>
       </widget>
@@ -40,7 +44,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_file">
