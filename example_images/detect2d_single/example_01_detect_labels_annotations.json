@@ -125,6 +125,20 @@
                     139
                 ]
             ]
+        },
+        {
+            "id": 0,
+            "label": "table",
+            "points": [
+                [
+                    0,
+                    225
+                ],
+                [
+                    212,
+                    374
+                ]
+            ]
         }
     ],
     "labels": [
@@ -156,6 +170,16 @@
             ],
             "id": 5,
             "label": "sofa",
+            "visible": true
+        },
+        {
+            "color": [
+                0,
+                255,
+                8
+            ],
+            "id": 6,
+            "label": "table",
             "visible": true
         }
     ]
