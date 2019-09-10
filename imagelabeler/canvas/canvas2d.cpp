@@ -420,6 +420,7 @@ void Canvas2D::changeCanvasMode(CanvasMode _mode)
     if (_mode == MOVE)
         throw "move mode cannot be set to canvas 2d";
     mode = _mode;
+    if (mode == SELECT) rectEditing = false;
     emit modeChanged(modeString());
 }
 

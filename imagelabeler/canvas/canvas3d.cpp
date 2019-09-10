@@ -360,6 +360,8 @@ void Canvas3D::changeCanvasMode(CanvasMode _mode)
         canvasY->focusMoving=false;
         canvasZ->focusMoving=false;
     }
+    if (mode == SELECT)
+        cubeEditing=false;
     emit modeChanged(modeString());
 }
 
