@@ -676,6 +676,12 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionAbout_triggered()
 {
+    QString about_text;
+    about_text = "<p>Auther : Wu Jialong</p>";
+    about_text += "<p>Date : 2019.09</p>";
+    about_text += "<p>To get more information and tutorial, please refer to the ";
+    about_text += "<a href='https://cloud.tsinghua.edu.cn/d/55f9b7ae115e488fae5c/'>Documentation</a></p>";
+    QMessageBox::about(this, "About ImageLabeler", about_text);
 }
 
 bool MainWindow::switchFile(int idx)
