@@ -1,5 +1,7 @@
 # ImageLabeler
 
+基于Qt实现的图片数据标注工具. Image Annotation Tool Based on Qt, supporting 2D/3D detection/segmentation.
+
 Jialong Wu
 
 ## Introduction
